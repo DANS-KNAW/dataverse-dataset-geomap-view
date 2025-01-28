@@ -328,10 +328,11 @@ function DvDatasetGeoMapViewer() {
 
     // Construct the html elements for the mapview
     // Note that we fixed the height of the map to 480px; was 320px (better for sideview)
+    // Also styling done here, could be done in css
     function createMapViewDiv() {
         var mapviewDiv = $('<div id="' + geomap_viewer_id + '"></div>');
 
-        var controls = $('<p>Geographic location of datasets: </p>');
+        var controls = $('<p style="padding: 5px 0 0 5px;margin: 5px;">Geographic location of datasets: </p>');
         controls.append('<span id="'+ geomap_viewer_id + '-result-totals"></span>');
         //controls.append('<input id="btnSubmit-searchLocation" type="submit" value="Start Retrieving" />');
 
@@ -369,6 +370,7 @@ function DvDatasetGeoMapViewer() {
                 // console.log('Authors: ' + authors + '; Publication date: ' + publication_date);
 
                 // Only handle points for now!
+                // Note that we could also have bounding boxes (rectangles) in the metadata
                 dansSpatialPoint = value.metadataBlocks.dansTemporalSpatial.fields.find(x => x.typeName === "dansSpatialPoint");
                 // Note that there could be multiple points, even in different schemes
                 if (typeof dansSpatialPoint !== "undefined") {
@@ -422,12 +424,34 @@ function DvDatasetGeoMapViewer() {
         return resultFeatureArr;
     }
 
-    /** Note that I copied this next convert function from somewhere on the web, 
-     * ignoring any errors and not having it validated in any way 
-     * copy from https://github.com/glenndehaan/rd-to-wgs84/blob/master/src/index.js
-     */
     /**
      * Converts the Dutch 'RD' RijksDriehoek coordinate system to standard WGS84 (GPS) coordinates
+     */
+    /** Note that I copied this next convert function from the web, 
+     * ignoring any errors and not having it validated in any way 
+     * Original code copied from https://github.com/glenndehaan/rd-to-wgs84/blob/master/src/index.js
+     * For completeness the license is included below:
+     * MIT License
+     * 
+     * Copyright (c) 2017 Glenn de Haan
+     * 
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     * 
+     * The above copyright notice and this permission notice shall be included in all
+     * copies or substantial portions of the Software.
+     * 
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+     * SOFTWARE. 
      */
     const convert = (x, y) => {
         const x0 = 155000.000;
