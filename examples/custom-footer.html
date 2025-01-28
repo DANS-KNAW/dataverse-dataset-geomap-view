@@ -83,19 +83,11 @@
     font-size: 12px; /* needed to fix this */
 }
 </style>
-<!-- DvDatasetGeoMapViewer, when deployed on a server the js file should be in '/var/www/html/custom' -->
+<!-- DvDatasetGeoMapViewer, when deployed on a DANS server the js file should be in '/var/www/html/custom' -->
 <script src="/custom/dv-dataset-geomap-view-0.1.0.js"></script>
-
 <script>
-// Checking if we have jQuery and what version
-let hasJQ = typeof jQuery === 'function'; 
-console.log('jQuery' + (hasJQ ? ` version ${jQuery.fn.jquery} loaded.` : ' is not loaded.')); 
-
+// Assume we have jQuery, because its is in the footer of the Dataverse application
 $().ready(function() {
-    console.log('start with geomap stuff');
-
-    // something in #dv-main before #resultsTable and after #resultsCountPaginatorBlock
-    DvDatasetGeoMapViewer('resultsCountPaginatorBlock');
+    DvDatasetGeoMapViewer();
 });
-
 </script>
