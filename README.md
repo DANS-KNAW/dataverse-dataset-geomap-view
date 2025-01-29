@@ -5,5 +5,7 @@ Currently this is only working for the DANS Archaeological Datastation, with its
 
 The code is 'plain' Javascript with the use of jQuery and the Leaflet libraries. 
 
-## Dev notes for DANS developers
-TODO
+More information about using and developing on this code can be found here: 
+[Developer notes](./docs/DEVNOTES.md)
+
+
