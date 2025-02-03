@@ -4,7 +4,7 @@ Developer notes
 The JavaScript code is based on the functionality of Dataverse version 6.2+, and is uses the jQuery and the Leaflet geographical map library. 
 When the `DvDatasetGeoMapViewer` function is called, from a script tag in the custom footer, the default 'list' display is accompanied (via a 'Map' tab) on geographical map showing the datasets with locations as markers. 
 
-### Short description of the solution: 
+## Short description of the solution: 
 
 The script in that custom footer is kicking in with a search results page load (default the homepage shows the top 10 in a list). 
 
@@ -42,3 +42,17 @@ When you edit that custom footer file in the `shared` directory just a browser p
 When editing the js file, you need two copy actions:
 - firsts into that `shared` dir (unless you clone the repo in there).
 - next on the vagrant box into that `/var/www/html/custom/geomapview` folder. 
+
+## Possible functional improvements:
+
+- Extract and display locations from more than 1000 datasets. Current limit comes from the search API call, getting more results has to be done with more API requests.  Allow to retrieve more via an extra GUI control with progress bar. 
+
+- Also display bounding boxes(rectangles), especially when a dateset only has those, we now do not see the dataset on the map. The way that this is displayed (with different color markers) can be done similar to how the Ariadne portal is doing it. 
+
+- Make the script more general usable; for others that have geographical coordinates in their custom metadata. 
+
+- Enhancing the appearance of the marker popup with thumbnail or icon similar to what is done on the result listing. 
+
+- Allow selection of alternative base maps, like a satellite image. 
+
+- Allow downloading the geographical information on the map in GeoJSON format.

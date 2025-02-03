@@ -247,7 +247,7 @@ function DvDatasetGeoMapViewer() {
         apiUrl += '&type=dataset'; // only datasets
 
         // when newParams is empty, we don't add it to the url
-        if (newParams.toString().length === 0) {
+        if (newParams.toString().length !== 0) {
             apiUrl += '&' + newParams.toString();
         }
 
