@@ -168,7 +168,9 @@ function DvDatasetGeoMapViewer() {
         console.log('Total of ' + result.data.total_count + " datasets found");
 
         let extractedFeatures = extractFeatures(result);
-        num_retrieved += extractedFeatures.length;
+        num_retrieved += extractedFeatures.length; // keep track of the total number of points (features)
+        // But also want to know how many datasets have a location
+
         console.log('Number of features: ' + extractedFeatures.length);
 
         var markerList = [];
@@ -195,7 +197,7 @@ function DvDatasetGeoMapViewer() {
         map.fitBounds(markers.getBounds(), {padding: [20, 20]});
 
         // update result totals retrieval indication
-        $("#" + geomap_viewer_id + "-result-totals").html(" Retrieved " + num_retrieved + " with a point location"+ " (total number of datasets: " + result.data.total_count + ")");
+        $("#" + geomap_viewer_id + "-result-totals").html(" Retrieved " + num_retrieved + " point location(s)"+ " (total number of datasets: " + result.data.total_count + ")");
     }
 
     function getBaseUrl() {
@@ -332,7 +334,7 @@ function DvDatasetGeoMapViewer() {
     function createMapViewDiv() {
         var mapviewDiv = $('<div id="' + geomap_viewer_id + '"></div>');
 
-        var controls = $('<p style="padding: 5px 0 0 5px;margin: 5px;">Geographic location of datasets: </p>');
+        var controls = $('<p style="padding: 5px 0 0 5px;margin: 5px;">Geographic location of published datasets: </p>');
         controls.append('<span id="'+ geomap_viewer_id + '-result-totals"></span>');
         //controls.append('<input id="btnSubmit-searchLocation" type="submit" value="Start Retrieving" />');
 
@@ -394,28 +396,32 @@ function DvDatasetGeoMapViewer() {
                         } else {    
                             console.log('Spatial point scheme not recognized: ' + dansSpatialPoint.value[i]["dansSpatialPointScheme"].value);
                         }
-                    }
 
-                    // The next could be use to show the location in a popup somewhere else
-                    //location = "<span><a href='http://maps.google.com/maps?z=18&q="+ lat + "," + lon + "' target='_blank'>" + lat  + ", " + lon + "</a></span>";
-
-                    // add to the features; geojson format so we can export it later
-                    const feature = {
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Point",
-                            "coordinates": [lon, lat]
-                        },
-                        "properties": {
-                            "name": value.name,
-                            "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
-                            "authors": authors,
-                            "publication_date": publication_date,
-                            "id": value.global_id
+                        // Check if lat, lon are valid numbers; because the leaflet map can break on invalid coordinates!
+                        if (!isWGS84CoordinateValid(lat, lon) ) {
+                            console.log('Invalid WGS84 coordinate: ' + lat + ', ' + lon);
+                            continue;
                         }
+                 
+                        // add to the features; geojson format so we can export it later
+                        const feature = {
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": [lon, lat]
+                            },
+                            "properties": {
+                                "name": value.name,
+                                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
+                                "authors": authors,
+                                "publication_date": publication_date,
+                                "id": value.global_id
+                            }
+                        }
+                        // console.log(feature);
+                        resultFeatureArr.push(feature);
                     }
-                    // console.log(feature);
-                    resultFeatureArr.push(feature);
+
                 }
             }
         });
@@ -510,4 +516,9 @@ function DvDatasetGeoMapViewer() {
             lon: lWgs
         }
     };
+
+    function isWGS84CoordinateValid(lat, lon) {
+        // Lat Lon decimal degrees
+        return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+    }
 }
