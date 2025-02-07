@@ -7,7 +7,11 @@
  * 
  */
 function DvDatasetGeoMapViewer() {
+    // Archaeology specific values
+    let subtree = 'root'; // Note that Dataverse can be configured to have another 'root' verse
+    let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
 
+    let use_base_url; // optionally use an alternative base url instead of the one of the current web page
 
     // We use clustering for potential large number of points
     // It also handles the case where more points are on the same location
@@ -24,7 +28,7 @@ function DvDatasetGeoMapViewer() {
     // alternative is on the side of the search results, would be logical if that was in sync with the search results
     //let viewInsertionBelow = $('#facetType'); // here it suggests you can 'filter' somehow!
 
-    // Note that this is not always there on that page
+    // Note that this is not always there on that page, for instance when not on the daaverse search page
     if(viewInsertionBelow === undefined || viewInsertionBelow.length === 0) {
         console.log('No insertion element found');
         return;
@@ -45,15 +49,12 @@ function DvDatasetGeoMapViewer() {
     let tabSelection = createTabSelection();
     tabSelection.insertBefore(viewInsertionBelow);
 
-    // get stored value from local storage or session storage
     // session storage is gone when browser tab or window is closed
     // we only want the selection to survive page reloads because of changes in searching
     let activeTab = sessionStorage.getItem('activeTab');
     let selectedTab = 'list'; // default is the list tab
 
-    // if activeTab is not null, then show the tab
     if (activeTab) { // we might restrict to values 'list' or 'map' only
-        console.log('activeTab: ' + activeTab);
         $('#searchResultsViewTab button[aria-controls="' + activeTab + '"]').tab('show');
         selectedTab = activeTab;
     }
@@ -61,19 +62,15 @@ function DvDatasetGeoMapViewer() {
     //  PF uses a link instead of a button
     $('#searchResultsViewTab a').on('click', function (event) {
         event.preventDefault();
-        // console.log('clicked: ' + $(this).attr('id'));
         selectedTab = $(this).attr('aria-controls');
-        // store the active tab in local storage
         sessionStorage.setItem('activeTab', selectedTab);
         updateTabsView();
     });
 
-    // Fix the hover effect for those PF tabs
+    // Apply the hover effect for those PF tabs
     $('#searchResultsViewTab li').hover(function(){
-        // console.log('hovered in: ' + $(this).find('a').attr('id'))
         $(this).addClass("ui-state-hover");
     }, function(){
-        // console.log('hovered out: ' + $(this).find('a').attr('id'))
         $(this).removeClass("ui-state-hover");
     });
 
@@ -82,7 +79,7 @@ function DvDatasetGeoMapViewer() {
      * 
      * Note that after a page load the list is always rendered first, 
      * so we need to hide the map if it is selected. 
-     * The user will see that list stuff flash by.
+     * The user will see that list flash by.
      */ 
     function updateTabsView() {
         // For PF: switch class ui-tabs-selected ui-state-active to the li
@@ -91,14 +88,12 @@ function DvDatasetGeoMapViewer() {
             .parent().addClass('ui-tabs-selected ui-state-active');
 
         if (selectedTab === 'map') {
-            // console.log('Map tab selected');
             $('#' + geomap_viewer_id).show(); 
             $("#resultsTable").hide();
             $(".results-sort-pagination.results-bottom").hide();
             // hide element while keeping layout
             $("#resultsCountPaginatorBlock .results-count").css('visibility', 'hidden');
         } else {
-            // console.log('List tab selected');
             $('#' + geomap_viewer_id).hide();
             $("#resultsTable").show();
             $(".results-sort-pagination.results-bottom").show();
@@ -135,7 +130,7 @@ function DvDatasetGeoMapViewer() {
     }
     map.addLayer(markers);
   
-    let baseUrl = getBaseUrl();
+    let baseUrl = use_base_url ? use_base_url : getBaseUrl();
     let start = 0;
     let pageSize = 1000; // The max for the search API is 1000
     let num_retrieved = 0;
@@ -158,7 +153,7 @@ function DvDatasetGeoMapViewer() {
                 start = start + pageSize; // advance to the next page
             }, 
             error: function(xhr, status, error) {
-                console.error("Error: " + error);
+                console.error("Error while doing search request: " + error);
             },
             complete: function () {
                 $('#' + geomap_viewer_id + '-spinner-searchLocation').hide();
@@ -167,6 +162,7 @@ function DvDatasetGeoMapViewer() {
     }
 
     function processSearchResult(result) {
+        const t0 = performance.now();
         console.log('Total of ' + result.data.total_count + " datasets found");
 
         let extractedFeatures = extractFeatures(result);
@@ -203,15 +199,14 @@ function DvDatasetGeoMapViewer() {
 
         // update result totals retrieval indication
         $("#" + geomap_viewer_id + "-result-totals").html(" Retrieved " + num_retrieved + " point location(s)"+ " (total number of datasets: " + result.data.total_count + ")");
+        const t1 = performance.now();
+        console.log(`processSearchResult took ${t1 - t0} milliseconds.`);
     }
 
     function getBaseUrl() {
-        // construct baseurl using window.location
         let baseUrl = window.location.protocol + '//' + window.location.hostname;
         baseUrl += window.location.port.length > 0 ? ':' + window.location.port : '';
         // Note that we do not add the path
-
-        // console.log('Base URL: ' + baseUrl);
         return baseUrl;
     }
 
@@ -219,14 +214,9 @@ function DvDatasetGeoMapViewer() {
     // See: https://guides.dataverse.org/en/latest/api/search.html
     // Note that in the new frontend SPA the URL could be different
     function constructSearchApiUrl(baseUrl) {
-        // Archaeology specific values
-        let subtree = 'root'; // Note that Dataverse can be configured to have another 'root' verse
-        let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
-  
-        let url = window.location.href;
         let search = window.location.search;
         let params = new URLSearchParams(search);
-        console.log('Page URL: ' + url + ', Params: ' + params + ' Search: ' + search);
+        console.log('Page URL: ' + window.location.href + ', Params: ' + params + ' Search: ' + search);
 
         // Extract and reuse any fq (filter queries) params to filter on       
         // construct new params object for filter queries
@@ -240,7 +230,6 @@ function DvDatasetGeoMapViewer() {
                 newParams.append('fq', params.get(`fq${i}`));
             }
         }
-        console.log('New params: '+ newParams);
 
         // TODO: use newParams instead of string concatenation below
 
@@ -266,15 +255,13 @@ function DvDatasetGeoMapViewer() {
 
         // Extract and reuse any sort params to sort on
         if (params.has('sort')) {
-            console.log('Sort: ' + params.get('sort'));
             sort = params.get('sort');
             // remove the 'Sort' part from the value
             sort = sort.replace('Sort', '');
             apiUrl += '&sort=' + sort;
         }
         if(params.has('order')) {   
-            console.log('Sort order: ' + params.get('order'));
-            order    = params.get('order');
+            order = params.get('order');
             apiUrl += '&order=' + order;
         }
 
@@ -284,17 +271,13 @@ function DvDatasetGeoMapViewer() {
     }
 
     function hasDatasetType() {
-        let url = window.location.href;
-        let search = window.location.search;
-        let params = new URLSearchParams(search);
-        // console.log('Page URL: ' + url + ', Params: ' + params + ' Search: ' + search);
-
+        const search = window.location.search;
+        const params = new URLSearchParams(search);
         let result = true; // dataset is 'on' by default
 
         // check if types is specified and if dataset is in the list
         if (params.has('types') ) {
             let types = params.get('types');
-            // console.log('Types: ' + types);
             if (!types.includes('dataset')) {
                 result = false;
             }
@@ -314,7 +297,7 @@ function DvDatasetGeoMapViewer() {
         let list_tab = $('<li class="ui-tabs-header ui-state-default ui-tabs-selected ui-state-active ui-corner-top" role="tab" tabindex="0" aria-expanded="true" aria-selected="true"><a href="" id="list-tab"  aria-controls="list"> List</a></li>');
         nav_tabs.append(list_tab);
 
-        let list_icon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list-task" viewBox="0 0 16 16">
+        const list_icon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list-task" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zM3 3H2v1h1z"/>
                 <path d="M5 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M5.5 7a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 4a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1z"/>
                 <path fill-rule="evenodd" d="M1.5 7a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5zM2 7h1v1H2zm0 3.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm1 .5H2v1h1z"/>
@@ -324,7 +307,7 @@ function DvDatasetGeoMapViewer() {
         let map_tab = $('<li class="ui-tabs-header ui-state-default ui-corner-top" role="tab" tabindex="0" aria-expanded="false" aria-selected="false"><a href="" id="map-tab" aria-controls="map" aria-selected="false"> Map</a></li>'); 
         nav_tabs.append(map_tab);
 
-        let map_icon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-map" viewBox="0 0 16 16">
+        const map_icon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-map" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M15.817.113A.5.5 0 0 1 16 .5v14a.5.5 0 0 1-.402.49l-5 1a.5.5 0 0 1-.196 0L5.5 15.01l-4.902.98A.5.5 0 0 1 0 15.5v-14a.5.5 0 0 1 .402-.49l5-1a.5.5 0 0 1 .196 0L10.5.99l4.902-.98a.5.5 0 0 1 .415.103M10 1.91l-4-.8v12.98l4 .8zm1 12.98 4-.8V1.11l-4 .8zm-6-.8V1.11l-4 .8v12.98z"/>
             </svg>`);
         map_tab.find('a').prepend(map_icon);
@@ -374,42 +357,37 @@ function DvDatasetGeoMapViewer() {
         // console.log('Total of items in this page: ' + result.data.items.length);
 
         $.each(result.data.items, function (key, value) {
-            console.log('Processing item: ' + value.name);
+            //console.log('Processing item: ' + value.name);
             if (typeof value.metadataBlocks !== "undefined" &&
                 typeof value.metadataBlocks.dansTemporalSpatial !== "undefined") {
                 let authors   = value.authors.map(x => x).join(", ");
                 let publication_date = value.published_at.substring(0, 10); // fixed format
-                // console.log('Authors: ' + authors + '; Publication date: ' + publication_date);
-
                 // Only handle points for now!
                 // Note that we could also have bounding boxes (rectangles) in the metadata
                 dansSpatialPoint = value.metadataBlocks.dansTemporalSpatial.fields.find(x => x.typeName === "dansSpatialPoint");
                 // Note that there could be multiple points, even in different schemes
                 if (typeof dansSpatialPoint !== "undefined") {
-                    // console.log('Number of spatial points: ' + dansSpatialPoint.value.length);
                     for (let i = 0; i < dansSpatialPoint.value.length; i++) {
                         dansSpatialPointX = dansSpatialPoint.value[i]["dansSpatialPointX"].value;
                         dansSpatialPointY = dansSpatialPoint.value[i]["dansSpatialPointY"].value;
                         let lat = 0;
                         let lon = 0;
                         if (dansSpatialPoint.value[i]["dansSpatialPointScheme"].value === "RD (in m.)") {
-                            // console.log('Spatial point scheme in RD: ' + dansSpatialPoint.value[i]["dansSpatialPointScheme"].value);
-                            // calculate lat, lon in WGS84, assuming new RD in m.
                             latLon = convert(parseFloat(dansSpatialPointX), parseFloat(dansSpatialPointY));
                             lat = latLon.lat;
                             lon = latLon.lon;
                         } else if ( dansSpatialPoint.value[i]["dansSpatialPointScheme"].value === "longitude/latitude (degrees)") {
-                            // console.log('Spatial point scheme in WGS84: ' + dansSpatialPoint.value[i]["dansSpatialPointScheme"].value);
                             // Assume WGS84 in decimal degrees, no conversion needed
                             lat = parseFloat(dansSpatialPointY);
                             lon = parseFloat(dansSpatialPointX);
                         } else {    
-                            console.log('Spatial point scheme not recognized: ' + dansSpatialPoint.value[i]["dansSpatialPointScheme"].value);
+                            console.warn('Spatial point scheme not recognized: ' + dansSpatialPoint.value[i]["dansSpatialPointScheme"].value);
+                            continue;
                         }
 
                         // Check if lat, lon are valid numbers; because the leaflet map can break on invalid coordinates!
                         if (!isWGS84CoordinateValid(lat, lon) ) {
-                            console.log('Invalid WGS84 coordinate: ' + lat + ', ' + lon);
+                            console.warn('Invalid WGS84 coordinate: ' + lat + ', ' + lon);
                             continue;
                         }
                  
@@ -428,11 +406,9 @@ function DvDatasetGeoMapViewer() {
                                 "id": value.global_id
                             }
                         }
-                        // console.log(feature);
                         resultFeatureArr.push(feature);
                     }
-
-                }
+                } // End point(s) handling
             }
         });
         const t1 = performance.now();
