@@ -192,9 +192,12 @@ function DvDatasetGeoMapViewer() {
         }
         markers.addLayers(markerList);
 
-        // zoom to extend; show all markers but zoomed in as much as possible
-        // but add some padding for balloons
-        map.fitBounds(markers.getBounds(), {padding: [20, 20]});
+        var bounds = markers.getBounds();
+        if (bounds.isValid()) { // empty layer has non valid bounds!        
+            // zoom to extend; show all markers but zoomed in as much as possible
+            // but add some padding for balloons
+            map.fitBounds(bounds, {padding: [20, 20]});
+        }
 
         // update result totals retrieval indication
         $("#" + geomap_viewer_id + "-result-totals").html(" Retrieved " + num_retrieved + " point location(s)"+ " (total number of datasets: " + result.data.total_count + ")");
@@ -344,6 +347,11 @@ function DvDatasetGeoMapViewer() {
         spinner.append('<span>Loading...</span><img src="/resources/images/ajax-loading.gif" style="width: 1.2em; height: 1.2em;" />');
 
         controls.append(spinner);
+        
+        // More explanantion via tooltip     
+        var tooltip = $('<span>&nbsp;</span><span class="glyphicon glyphicon-question-sign tooltip-icon" data-toggle="tooltip" data-placement="auto top" data-trigger="hover" data-original-title="Geographical map showing locations of Datasets when coordinates have been specified in the metadata. Multiple points per dataset are possible. Only up to the first 1000 datasets in the search results are used."></span>');
+        controls.append(tooltip);
+        tooltip.tooltip();
 
         mapviewDiv.append(controls);
         mapviewDiv.append('<div id="' + map_insertion_id + '" style="height:480px;"></div>');
