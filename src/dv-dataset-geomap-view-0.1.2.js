@@ -7,6 +7,8 @@
  * 
  */
 function DvDatasetGeoMapViewer() {
+
+
     // We use clustering for potential large number of points
     // It also handles the case where more points are on the same location
     // See: https://github.com/Leaflet/Leaflet.markercluster
@@ -40,14 +42,14 @@ function DvDatasetGeoMapViewer() {
 
     // --- Tab selection for list or map view
 
-    var tabSelection = createTabSelection();
+    let tabSelection = createTabSelection();
     tabSelection.insertBefore(viewInsertionBelow);
 
     // get stored value from local storage or session storage
     // session storage is gone when browser tab or window is closed
     // we only want the selection to survive page reloads because of changes in searching
-    var activeTab = sessionStorage.getItem('activeTab');
-    var selectedTab = 'list'; // default is the list tab
+    let activeTab = sessionStorage.getItem('activeTab');
+    let selectedTab = 'list'; // default is the list tab
 
     // if activeTab is not null, then show the tab
     if (activeTab) { // we might restrict to values 'list' or 'map' only
@@ -107,7 +109,7 @@ function DvDatasetGeoMapViewer() {
 
     // --- Geographic map view with leaflet
 
-    var mapviewDiv = createMapViewDiv();
+    let mapviewDiv = createMapViewDiv();
 
     // applying some style here, could be done in css
     mapviewDiv.css("background-color", "#f5f5f5");
@@ -117,13 +119,13 @@ function DvDatasetGeoMapViewer() {
     mapviewDiv.insertAfter(viewInsertionBelow);
  
     // Initialize map, with OpenStreetMap centered on the Netherlands but showing most of Europe
-    var map = L.map(map_insertion_id).setView([51.505, -0.09], 3);
+    let map = L.map(map_insertion_id).setView([51.505, -0.09], 3);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    var markers;
+    let markers;
     if (useClustering) {
         markers = L.markerClusterGroup();
         // Note we don't use chunckedloading, but retrieve in batches (pages) would be nice
@@ -133,11 +135,11 @@ function DvDatasetGeoMapViewer() {
     }
     map.addLayer(markers);
   
-    var baseUrl = getBaseUrl();
-    var start = 0;
-    var pageSize = 1000; // The max for the search API is 1000
-    var num_retrieved = 0;
-    var searchApiUrl = constructSearchApiUrl(baseUrl)
+    let baseUrl = getBaseUrl();
+    let start = 0;
+    let pageSize = 1000; // The max for the search API is 1000
+    let num_retrieved = 0;
+    let searchApiUrl = constructSearchApiUrl(baseUrl)
     doSearchRequest(searchApiUrl);
 
     updateTabsView(); // Must have everything initialized before this is called
@@ -156,7 +158,7 @@ function DvDatasetGeoMapViewer() {
                 start = start + pageSize; // advance to the next page
             }, 
             error: function(xhr, status, error) {
-                console.log("Error: " + error);
+                console.error("Error: " + error);
             },
             complete: function () {
                 $('#' + geomap_viewer_id + '-spinner-searchLocation').hide();
@@ -173,17 +175,17 @@ function DvDatasetGeoMapViewer() {
 
         console.log('Number of features: ' + extractedFeatures.length);
 
-        var markerList = [];
+        const markerList = [];
 
         // Update the map; add the markers corresponding to the features
         // assume points only for now, boundingboxes(rectangles) should be done later
         for (feature of extractedFeatures) {
             lon = feature.geometry.coordinates[0];
             lat = feature.geometry.coordinates[1];
-            var marker = L.marker([lat, lon]);
+            let marker = L.marker([lat, lon]);
 
             // Note that we do not want the DOI url; instead  a direct url to prevent extra redirect
-            var dataset_url = baseUrl + '/dataset.xhtml?persistentId=' + feature.properties.id;
+            const dataset_url = baseUrl + '/dataset.xhtml?persistentId=' + feature.properties.id;
             marker.bindPopup('<a href="' + dataset_url + '"' + '>' + feature.properties.name + '</a><br>' 
                 + feature.properties.authors + "; " 
                 + feature.properties.publication_date + ", <br>" 
@@ -192,7 +194,7 @@ function DvDatasetGeoMapViewer() {
         }
         markers.addLayers(markerList);
 
-        var bounds = markers.getBounds();
+        const bounds = markers.getBounds();
         if (bounds.isValid()) { // empty layer has non valid bounds!        
             // zoom to extend; show all markers but zoomed in as much as possible
             // but add some padding for balloons
@@ -205,7 +207,7 @@ function DvDatasetGeoMapViewer() {
 
     function getBaseUrl() {
         // construct baseurl using window.location
-        var baseUrl = window.location.protocol + '//' + window.location.hostname;
+        let baseUrl = window.location.protocol + '//' + window.location.hostname;
         baseUrl += window.location.port.length > 0 ? ':' + window.location.port : '';
         // Note that we do not add the path
 
@@ -218,8 +220,8 @@ function DvDatasetGeoMapViewer() {
     // Note that in the new frontend SPA the URL could be different
     function constructSearchApiUrl(baseUrl) {
         // Archaeology specific values
-        var subtree = 'root'; // Note that Dataverse can be configured to have another 'root' verse
-        var metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
+        let subtree = 'root'; // Note that Dataverse can be configured to have another 'root' verse
+        let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
   
         let url = window.location.href;
         let search = window.location.search;
@@ -228,7 +230,7 @@ function DvDatasetGeoMapViewer() {
 
         // Extract and reuse any fq (filter queries) params to filter on       
         // construct new params object for filter queries
-        var newParams = new URLSearchParams();
+        let newParams = new URLSearchParams();
         // first just add all fq params, copy action
         params.getAll('fq').forEach(fq => newParams.append('fq', fq));
         // get fq0, fq1 etc. (from facet selection) from the params and add to the search query
@@ -242,13 +244,13 @@ function DvDatasetGeoMapViewer() {
 
         // TODO: use newParams instead of string concatenation below
 
-        var q = '*'; // make sure we have a query, default is '*', the search API needs it
+        let q = '*'; // make sure we have a query, default is '*', the search API needs it
         if (params.has('q') && params.get('q').length > 0) {
             q = params.get('q');
         }
 
         // start construction of API URL by appending to the base url
-        var apiUrl = baseUrl + '/api/search' + '?' + 'q=' + q;
+        let apiUrl = baseUrl + '/api/search' + '?' + 'q=' + q;
         apiUrl += '&type=dataset'; // only datasets
 
         // when newParams is empty, we don't add it to the url
@@ -287,11 +289,11 @@ function DvDatasetGeoMapViewer() {
         let params = new URLSearchParams(search);
         // console.log('Page URL: ' + url + ', Params: ' + params + ' Search: ' + search);
 
-        var result = true; // dataset is 'on' by default
+        let result = true; // dataset is 'on' by default
 
         // check if types is specified and if dataset is in the list
         if (params.has('types') ) {
-            var types = params.get('types');
+            let types = params.get('types');
             // console.log('Types: ' + types);
             if (!types.includes('dataset')) {
                 result = false;
@@ -303,26 +305,26 @@ function DvDatasetGeoMapViewer() {
     function createTabSelection() {
         // With that PrimeFaces HTML; trying to get look-and-feel right is cumbersome!
         // Note: get hover effect right needed to handle the hover event on the li
-        var tabs = $('<div id="searchResultsViewTab" class="ui-tabs ui-widget ui-widget-content ui-corner-all ui-hidden-container ui-tabs-top"></div>')
+        let tabs = $('<div id="searchResultsViewTab" class="ui-tabs ui-widget ui-widget-content ui-corner-all ui-hidden-container ui-tabs-top"></div>')
         // remove border-bottom
         tabs.css('border-bottom', '0px');
 
-        var nav_tabs = $('<ul class="ui-tabs-nav ui-helper-reset ui-widget-header ui-corner-all" role="tablist"></ul>')
+        let nav_tabs = $('<ul class="ui-tabs-nav ui-helper-reset ui-widget-header ui-corner-all" role="tablist"></ul>')
         
-        var list_tab = $('<li class="ui-tabs-header ui-state-default ui-tabs-selected ui-state-active ui-corner-top" role="tab" tabindex="0" aria-expanded="true" aria-selected="true"><a href="" id="list-tab"  aria-controls="list"> List</a></li>');
+        let list_tab = $('<li class="ui-tabs-header ui-state-default ui-tabs-selected ui-state-active ui-corner-top" role="tab" tabindex="0" aria-expanded="true" aria-selected="true"><a href="" id="list-tab"  aria-controls="list"> List</a></li>');
         nav_tabs.append(list_tab);
 
-        var list_icon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list-task" viewBox="0 0 16 16">
+        let list_icon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list-task" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zM3 3H2v1h1z"/>
                 <path d="M5 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M5.5 7a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 4a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1z"/>
                 <path fill-rule="evenodd" d="M1.5 7a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5zM2 7h1v1H2zm0 3.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm1 .5H2v1h1z"/>
             </svg>`);
         list_tab.find('a').prepend(list_icon);
 
-        var map_tab = $('<li class="ui-tabs-header ui-state-default ui-corner-top" role="tab" tabindex="0" aria-expanded="false" aria-selected="false"><a href="" id="map-tab" aria-controls="map" aria-selected="false"> Map</a></li>'); 
+        let map_tab = $('<li class="ui-tabs-header ui-state-default ui-corner-top" role="tab" tabindex="0" aria-expanded="false" aria-selected="false"><a href="" id="map-tab" aria-controls="map" aria-selected="false"> Map</a></li>'); 
         nav_tabs.append(map_tab);
 
-        var map_icon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-map" viewBox="0 0 16 16">
+        let map_icon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-map" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M15.817.113A.5.5 0 0 1 16 .5v14a.5.5 0 0 1-.402.49l-5 1a.5.5 0 0 1-.196 0L5.5 15.01l-4.902.98A.5.5 0 0 1 0 15.5v-14a.5.5 0 0 1 .402-.49l5-1a.5.5 0 0 1 .196 0L10.5.99l4.902-.98a.5.5 0 0 1 .415.103M10 1.91l-4-.8v12.98l4 .8zm1 12.98 4-.8V1.11l-4 .8zm-6-.8V1.11l-4 .8v12.98z"/>
             </svg>`);
         map_tab.find('a').prepend(map_icon);
@@ -335,13 +337,13 @@ function DvDatasetGeoMapViewer() {
     // Note that we fixed the height of the map to 480px; was 320px (better for sideview)
     // Also styling done here, could be done in css
     function createMapViewDiv() {
-        var mapviewDiv = $('<div id="' + geomap_viewer_id + '"></div>');
+        let mapviewDiv = $('<div id="' + geomap_viewer_id + '"></div>');
 
-        var controls = $('<p style="padding: 5px 0 0 5px;margin: 5px;">Geographic location of published datasets: </p>');
+        let controls = $('<p style="padding: 5px 0 0 5px;margin: 5px;">Geographic location of published datasets: </p>');
         controls.append('<span id="'+ geomap_viewer_id + '-result-totals"></span>');
         //controls.append('<input id="btnSubmit-searchLocation" type="submit" value="Start Retrieving" />');
 
-        var spinner = $('<span id="' + geomap_viewer_id + '-spinner-searchLocation" style="display:none;"></span>');
+        let spinner = $('<span id="' + geomap_viewer_id + '-spinner-searchLocation" style="display:none;"></span>');
         //spinner.append('<span class="spinner-border" role="status" style="width: 1.2rem; height: 1.2rem;" ><span class="sr-only">Loading...</span></span>');
         // Note that we use a resource from the dataverse web application
         spinner.append('<span>Loading...</span><img src="/resources/images/ajax-loading.gif" style="width: 1.2em; height: 1.2em;" />');
@@ -349,7 +351,7 @@ function DvDatasetGeoMapViewer() {
         controls.append(spinner);
         
         // More explanantion via tooltip     
-        var tooltip = $('<span>&nbsp;</span><span class="glyphicon glyphicon-question-sign tooltip-icon" data-toggle="tooltip" data-placement="auto top" data-trigger="hover" data-original-title="Geographical map showing locations of Datasets when coordinates have been specified in the metadata. Multiple points per dataset are possible. Only up to the first 1000 datasets in the search results are used."></span>');
+        let tooltip = $('<span>&nbsp;</span><span class="glyphicon glyphicon-question-sign tooltip-icon" data-toggle="tooltip" data-placement="auto top" data-trigger="hover" data-original-title="Geographical map showing locations of Datasets when coordinates have been specified in the metadata. Multiple points per dataset are possible. Only up to the first 1000 datasets in the search results are used."></span>');
         controls.append(tooltip);
         tooltip.tooltip();
 
@@ -367,7 +369,7 @@ function DvDatasetGeoMapViewer() {
      */
     const extractFeatures = (result) => {
         const t0 = performance.now();
-        var resultFeatureArr = [];
+        const resultFeatureArr = [];
 
         // console.log('Total of items in this page: ' + result.data.items.length);
 
@@ -388,8 +390,8 @@ function DvDatasetGeoMapViewer() {
                     for (let i = 0; i < dansSpatialPoint.value.length; i++) {
                         dansSpatialPointX = dansSpatialPoint.value[i]["dansSpatialPointX"].value;
                         dansSpatialPointY = dansSpatialPoint.value[i]["dansSpatialPointY"].value;
-                        var lat = 0;
-                        var lon = 0;
+                        let lat = 0;
+                        let lon = 0;
                         if (dansSpatialPoint.value[i]["dansSpatialPointScheme"].value === "RD (in m.)") {
                             // console.log('Spatial point scheme in RD: ' + dansSpatialPoint.value[i]["dansSpatialPointScheme"].value);
                             // calculate lat, lon in WGS84, assuming new RD in m.
@@ -527,6 +529,7 @@ function DvDatasetGeoMapViewer() {
 
     function isWGS84CoordinateValid(lat, lon) {
         // Lat Lon decimal degrees
+        // Note that lon might be valid outside the range -180 to 180, because of cyclic nature
         return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     }
 }
