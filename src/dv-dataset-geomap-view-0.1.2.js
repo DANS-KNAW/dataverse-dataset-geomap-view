@@ -391,13 +391,12 @@ let dansDvGeoMap = (function() {
                             lon = parseFloat(dansSpatialPointX);
                         } else {    
                             console.warn('Spatial point scheme not recognized: ' + dansSpatialPoint.value[i]["dansSpatialPointScheme"].value);
-                            continue;
+                            continue; // skip this point, because we don't know how to convert!
                         }
 
-                        // Check if lat, lon are valid numbers; because the leaflet map can break on invalid coordinates!
                         if (!isWGS84CoordinateValid(lat, lon) ) {
                             console.warn('Invalid WGS84 coordinate: ' + lat + ', ' + lon);
-                            continue;
+                            continue; // skip this point, because leaflet map can break on invalid coordinates!
                         }
                  
                         // add to the features; geojson format so we can export it later
@@ -516,7 +515,69 @@ let dansDvGeoMap = (function() {
         // Lat Lon decimal degrees
         // Note that lon might be valid outside the range -180 to 180, because of cyclic nature
         return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
-    }
+    };
 
-    return {extractDansArchaeologyFeatures};
+    function extractDansDccdFeatures(result) {
+        const t0 = performance.now();
+        const resultFeatureArr = [];
+
+        // console.log('Total of items in this page: ' + result.data.items.length);
+
+        $.each(result.data.items, function (key, value) {
+            console.log('Processing item: ' + value.name);
+            if (typeof value.metadataBlocks !== "undefined" &&
+                typeof value.metadataBlocks.dccd !== "undefined") {
+                let authors   = value.authors.map(x => x).join(", ");
+                let publicationDate = value.published_at.substring(0, 10); // fixed format
+                // console.log('Authors: ' + authors + '; Publication date: ' + publication_date);
+
+                // Only handle points for now!
+                // Note that we could also have bounding boxes (rectangles) in the metadata
+                dccdSpatialPoint = value.metadataBlocks.dccd.fields.find(x => x.typeName === "dccd-location");
+                // Note that in dccd only point in WGS84!!!!!
+                if (typeof dccdSpatialPoint !== "undefined") { // should be there!
+                    // console.log('Number of spatial points: ' + dansSpatialPoint.value.length);
+                    for (let i = 0; i < dccdSpatialPoint.value.length; i++) {
+                        dccdSpatialPointX = dccdSpatialPoint.value[i]["dccd-longitude"].value;
+                        dccdSpatialPointY = dccdSpatialPoint.value[i]["dccd-latitude"].value;
+                                                // console.log('Spatial point scheme in WGS84: ' + dansSpatialPoint.value[i]["dansSpatialPointScheme"].value);
+                        // Assume WGS84 in decimal degrees, no conversion needed
+                        let lat = parseFloat(dccdSpatialPointY);
+                        let lon = parseFloat(dccdSpatialPointX);
+
+                        if (!isWGS84CoordinateValid(lat, lon) ) {
+                            console.warn('Invalid WGS84 coordinate: ' + lat + ', ' + lon);
+                            continue; // skip this point, because leaflet map can break on invalid coordinates!
+                        }
+
+                        // The next could be use to show the location in a popup somewhere else
+                        //location = "<span><a href='http://maps.google.com/maps?z=18&q="+ lat + "," + lon + "' target='_blank'>" + lat  + ", " + lon + "</a></span>";
+
+                        // add to the features; geojson format so we can export it later
+                        const feature = {
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": [lon, lat]
+                            },
+                            "properties": {
+                                "name": value.name,
+                                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
+                                "authors": authors,
+                                "publication_date": publicationDate,
+                                "id": value.global_id
+                            }
+                        }
+                        // console.log(feature);
+                        resultFeatureArr.push(feature);
+                    }
+                }
+            }
+        });
+        const t1 = performance.now();
+        console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
+        return resultFeatureArr;
+    };
+
+    return {extractDansArchaeologyFeatures, extractDansDccdFeatures};
 })();
