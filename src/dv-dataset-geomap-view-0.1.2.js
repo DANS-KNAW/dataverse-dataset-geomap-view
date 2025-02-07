@@ -14,14 +14,18 @@ function DvDatasetGeoMapViewer() {
 
     let alternativeBaseUrl; // optionally use an alternative base url instead of the one of the current web page
 
+    let allowOtherBaseMaps = false; // Experimental; allow the user to select other base maps (like satellite view)
+    // Known issues: when switching to satellite view, after reload it's is back to the default view
+    // should store the selection in session storage
+
     // We use clustering for potential large number of points
     // It also handles the case where more points are on the same location
     // See: https://github.com/Leaflet/Leaflet.markercluster
     let useClustering = true;
 
     // some id's for element creation and selection
-    let geomapViewerId = 'geomapview'; // id for the map view div, also used for prefixing
-    let mapInsertionId = geomapViewerId + '-geomap'; // leaflet map will be inserted in this div
+    const geomapViewerId = 'geomapview'; // id for the map view div, also used for prefixing
+    const mapInsertionId = geomapViewerId + '-geomap'; // leaflet map will be inserted in this div
 
     // Find insertion point for the map view div in Dataverse page
     // something in #dv-main before #resultsTable and after #resultsCountPaginatorBlock
@@ -29,12 +33,15 @@ function DvDatasetGeoMapViewer() {
     // alternative is on the side of the search results, would be logical if that was in sync with the search results
     //let viewInsertionBelow = $('#facetType'); // here it suggests you can 'filter' somehow!
 
-    // Note that this is not always there on that page, for instance when not on the daaverse search page
+    // --- Check if we can continue to create the map viewer, we don't want it on every page
+
+    // Note that this is not always there on that page, for instance when not on the dataverse search page
     if(viewInsertionBelow === undefined || viewInsertionBelow.length === 0) {
         console.log('No insertion element found; No map viewer created');
         return;
     }
 
+    // The list won't have Datasets so no map viewer is created
     if (!hasDatasetType()) {
         console.log('No dataset as search type; No map viewer created');
         return;
@@ -114,13 +121,52 @@ function DvDatasetGeoMapViewer() {
     
     mapviewDiv.insertAfter(viewInsertionBelow);
  
+    let openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    });
     // Initialize map, with OpenStreetMap centered on the Netherlands but showing most of Europe
     // should make this configuarble, but for now it is hardcoded
-    let map = L.map(mapInsertionId).setView([51.505, -0.09], 3);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
+    var map = L.map(mapInsertionId).setView([51.505, -0.09], 3);
+    openStreetMap.addTo(map);
+
+    let boundaryPlacesShown = true;
+    if (allowOtherBaseMaps) {
+        let esriWorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+        });
+        let esriWorldBoundariesPlaces = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri, HERE, Garmin, &copy; OpenStreetMap contributors, and the GIS user community'
+        });
+        let baseLayers = {"OpenStreetMap": openStreetMap, "Satellite": esriWorldImagery};
+            let layerControl = L.control.layers(baseLayers).addTo(map);
+        L.control.scale().addTo(map);
+        map.on('baselayerchange', function (e) {
+            if (e.name === "Satellite") {
+                if (boundaryPlacesShown) {
+                    map.addLayer(esriWorldBoundariesPlaces);
+                    layerControl.addOverlay(esriWorldBoundariesPlaces, "Boundaries and Places");
+                } else {
+                    layerControl.addOverlay(esriWorldBoundariesPlaces, "Boundaries and Places");
+                }
+            } else {
+                layerControl.removeLayer(esriWorldBoundariesPlaces);
+                map.removeLayer(esriWorldBoundariesPlaces);
+            }
+        });
+        map.on('overlayadd', function (e) {
+            if (e.name === "Boundaries and Places") {
+                boundaryPlacesShown = true;
+            }
+        });
+        map.on('overlayremove', function (e) {
+            if (e.name === "Boundaries and Places") {
+                boundaryPlacesShown = false;
+            }
+        });
+    }
 
     let markers;
     if (useClustering) {
