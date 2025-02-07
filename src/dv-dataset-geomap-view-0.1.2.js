@@ -11,7 +11,7 @@ function DvDatasetGeoMapViewer() {
     let subtree = 'root'; // Note that Dataverse can be configured to have another 'root' verse
     let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
 
-    let use_feature_extractor = extractDansArchaeologyFeatures; // default feature extractor
+    let use_feature_extractor = dansDvGeoMap.extractDansArchaeologyFeatures; // default feature extractor
 
     let use_base_url; // optionally use an alternative base url instead of the one of the current web page
 
@@ -287,6 +287,8 @@ function DvDatasetGeoMapViewer() {
         return result;
     }
 
+    // --- HTML element creation functions
+    
     function createTabSelection() {
         // With that PrimeFaces HTML; trying to get look-and-feel right is cumbersome!
         // Note: get hover effect right needed to handle the hover event on the li
@@ -348,8 +350,12 @@ function DvDatasetGeoMapViewer() {
 
 }
 
+/**
+ * DANS Module for extracting features from a search result from the Dataverse search API
+ */
+let dansDvGeoMap = (function() {
     /**
-     * Assumes to get a JSON search result from the Dataverse API
+     * Assumes to get a JSON search result from the Dataverse search API
      * and this is from the archaeology data station with the dansTemporalSpatial metadata block
      * 
      * The result is an array with 'geojson' features
@@ -512,3 +518,6 @@ function DvDatasetGeoMapViewer() {
         // Note that lon might be valid outside the range -180 to 180, because of cyclic nature
         return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     }
+
+    return {extractDansArchaeologyFeatures};
+})();
