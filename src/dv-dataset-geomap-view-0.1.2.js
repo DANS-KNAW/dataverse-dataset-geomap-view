@@ -11,6 +11,8 @@ function DvDatasetGeoMapViewer() {
     let subtree = 'root'; // Note that Dataverse can be configured to have another 'root' verse
     let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
 
+    let use_feature_extractor = extractDansArchaeologyFeatures; // default feature extractor
+
     let use_base_url; // optionally use an alternative base url instead of the one of the current web page
 
     // We use clustering for potential large number of points
@@ -165,7 +167,7 @@ function DvDatasetGeoMapViewer() {
         const t0 = performance.now();
         console.log('Total of ' + result.data.total_count + " datasets found");
 
-        let extractedFeatures = extractFeatures(result);
+        let extractedFeatures = use_feature_extractor(result);//extractFeatures(result);
         num_retrieved += extractedFeatures.length; // keep track of the total number of points (features)
         // But also want to know how many datasets have a location
 
@@ -344,13 +346,15 @@ function DvDatasetGeoMapViewer() {
         return mapviewDiv;
     }
 
+}
+
     /**
      * Assumes to get a JSON search result from the Dataverse API
      * and this is from the archaeology data station with the dansTemporalSpatial metadata block
      * 
      * The result is an array with 'geojson' features
      */
-    const extractFeatures = (result) => {
+    const extractDansArchaeologyFeatures = (result) => {
         const t0 = performance.now();
         const resultFeatureArr = [];
 
@@ -373,7 +377,7 @@ function DvDatasetGeoMapViewer() {
                         let lat = 0;
                         let lon = 0;
                         if (dansSpatialPoint.value[i]["dansSpatialPointScheme"].value === "RD (in m.)") {
-                            latLon = convert(parseFloat(dansSpatialPointX), parseFloat(dansSpatialPointY));
+                            latLon = convertRDtoWGS84(parseFloat(dansSpatialPointX), parseFloat(dansSpatialPointY));
                             lat = latLon.lat;
                             lon = latLon.lon;
                         } else if ( dansSpatialPoint.value[i]["dansSpatialPointScheme"].value === "longitude/latitude (degrees)") {
@@ -445,7 +449,7 @@ function DvDatasetGeoMapViewer() {
      * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
      * SOFTWARE. 
      */
-    const convert = (x, y) => {
+    const convertRDtoWGS84 = (x, y) => {
         const x0 = 155000.000;
         const y0 = 463000.000;
 
@@ -508,4 +512,3 @@ function DvDatasetGeoMapViewer() {
         // Note that lon might be valid outside the range -180 to 180, because of cyclic nature
         return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     }
-}
