@@ -7,12 +7,20 @@
  * 
  */
 function DvDatasetGeoMapViewer() {
-    // Archaeology specific values
+    // --- Archaeology (Dataverse archive) specific settings
     let subtree = 'root'; // Note that Dataverse can be configured to have another 'root' verse alias
     let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
     let featureExtractor = dansDvGeoMap.extractDansArchaeologyFeatures; // specific feature extractor for archaeology
 
+    // filter query to get only datasets with location coordinates, other datasets we cant use for displaying on a map
+    // Note that the filter query is specific for the metadata block
+    // "dansSpatialBoxNorth:[* TO *]" for the boxes  
+    // "dansSpatialPointX:[* TO *]" for the points
+    let locationCoordinatesFilterquery = encodeURI("dansSpatialPointX:[* TO *]");
+
     let alternativeBaseUrl; // optionally use an alternative base url instead of the one of the current web page
+
+    // --- Other configuration options
 
     let allowOtherBaseMaps = false; // Experimental; allow the user to select other base maps (like satellite view)
     // Known issues: when switching to satellite view, after reload it's is back to the default view
@@ -311,6 +319,10 @@ function DvDatasetGeoMapViewer() {
         if(params.has('order')) {   
             order = params.get('order');
             apiUrl += '&order=' + order;
+        }
+
+        if (locationCoordinatesFilterquery.length > 0) {
+            apiUrl += '&fq=' + locationCoordinatesFilterquery;
         }
 
         console.log('Search URL: ' + apiUrl);
