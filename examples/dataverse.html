@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Add jquery 3.6 -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- jquery UI -->
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+
+    <!-- Bootstrap 3.4.1 -->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap-theme.min.css" integrity="sha384-6pzBo3FDv/PJ8r2KRkGHifhEocL+1X2rVCTTkUfGk7/0pbek5mMa1upzvWbrUbOZ" crossorigin="anonymous">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
+
+    <title>GeoMapView</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            /*justify-content: center;*/
+            /* align-items: center;*/
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .container {
+            /* set min-width to prevent the container from shrinking */
+            min-width: 400px;
+            /*text-align: center;*/
+            background: white;
+            padding: 20px;
+            /* border-radius: 8px;*/
+            /*box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);*/
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GeoMapView Test Page</h1>
+        <p>Explore the interactive map on a fake (mocked) Dataverse page.</p>
+        <!-- fake elements for the script to use -->
+        <div id="resultsCountPaginatorBlock">
+            <div id="resultsTable">
+                <div id="resultsCountPaginatorBlock">
+                    <span class="results-count">Showing 1 to 10 of 10</span>
+                </div>
+                <div>Nothing here, just fake!</div>
+                <div class="results-sort-pagination results-bottom"></div>
+            </div>
+    </div>
+</body>
+<footer>
+    <!-- fake custom footer -->
+<!-- Geomap -->
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"
+      integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==" crossorigin=""/>
+<!-- Make sure you put this AFTER Leaflet's CSS -->
+<script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
+        integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ==" crossorigin=""></script>
+<!-- Clustering-->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.1.0/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.1.0/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet.markercluster@1.1.0/dist/leaflet.markercluster.js"></script>
+<style>
+.leaflet-popup-content {
+    font-size: 12px; /* needed to fix this */
+}
+</style>
+<!-- DvDatasetGeoMapViewer, when deployed on a DANS server the js file should be in '/var/www/html/custom' -->
+<script src="./dv-dataset-geomap-view-0.2.0.js"></script>
+<script>
+// Assume we have jQuery, because its is in the footer of the Dataverse application
+$().ready(function() {
+    DvDatasetGeoMapViewer();
+});
+</script>
+</html>
