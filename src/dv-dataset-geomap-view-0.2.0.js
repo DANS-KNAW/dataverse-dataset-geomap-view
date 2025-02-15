@@ -5,8 +5,14 @@
  * Note that this code is dependent on the Dataverse HTML elements and CSS classes and ids.
  * Dataverse is a PrimeFaces (PF) based Java web application.
  * 
+ * options:
+ * - maxSearchRequestsPerPage: the number of datasets to retrieve per search request (default 100) 
+ *   must be between 1 and 1000 otherwise it is clipped to 1 or 1000
+ * 
  */
-function DvDatasetGeoMapViewer() {
+function DvDatasetGeoMapViewer(options) {
+    options = options || {};
+
     // --- Archaeology (Dataverse archive) specific settings
     let subtree = 'root'; // Note that Dataverse can be configured to have another 'root' verse alias
     let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
@@ -20,9 +26,23 @@ function DvDatasetGeoMapViewer() {
 
     let alternativeBaseUrl; // optionally use an alternative base url instead of the one of the current web page
 
-    // --- Other configuration options
+    // --- apply options if provided
 
-    let allowOtherBaseMaps = false; // Experimental; allow the user to select other base maps (like satellite view)
+    const maxSearchRequestsPerPage = options.maxSearchRequestsPerPage || 100; // default;  The max for the search API is 1000
+    // fix useless values
+    if (maxSearchRequestsPerPage > 1000) {
+        console.warn('Max search requests per page is too high; setting it to 1000');
+        maxSearchRequestsPerPage = 1000;
+    } else if (maxSearchRequestsPerPage < 1) {
+        console.warn('Max search requests per page is too low; setting it to 1');
+        maxSearchRequestsPerPage = 1;
+    }
+
+       
+    let allowOtherBaseMaps = options.allowOtherBaseMaps || false; // Experimental; allow the user to select other base maps (like satellite view)
+ 
+    // --- Other configuration options
+    
     // Known issues: when switching to satellite view, after reload it's is back to the default view
     // should store the selection in session storage
 
@@ -188,7 +208,7 @@ function DvDatasetGeoMapViewer() {
   
     let baseUrl = alternativeBaseUrl ? alternativeBaseUrl : getBaseUrl();
     let start = 0;
-    let pageSize = 1000; // The max for the search API is 1000
+    let pageSize = maxSearchRequestsPerPage;
     let numRetrieved = 0;
     let searchApiUrl = constructSearchApiUrl(baseUrl)
     doSearchRequest(searchApiUrl);
@@ -396,7 +416,9 @@ function DvDatasetGeoMapViewer() {
         controls.append(spinner);
         
         // More explanantion via tooltip     
-        let tooltip = $('<span>&nbsp;</span><span class="glyphicon glyphicon-question-sign tooltip-icon" data-toggle="tooltip" data-placement="auto top" data-trigger="hover" data-original-title="Geographical map showing locations of Datasets when coordinates have been specified in the metadata. Multiple points per dataset are possible. Only up to the first 1000 datasets in the search results are used."></span>');
+        let tooltip = $(`<span>&nbsp;</span><span class="glyphicon glyphicon-question-sign tooltip-icon" data-toggle="tooltip" data-placement="auto top" data-trigger="hover" 
+            data-original-title="Geographical map showing locations of Datasets when coordinates have been specified in the metadata. 
+            Multiple points per dataset are possible. Only up to the first ${maxSearchRequestsPerPage} datasets in the search results are used."></span>`);
         controls.append(tooltip);
         tooltip.tooltip();
 
