@@ -15,7 +15,7 @@
             "typeName": "title",
             "multiple": false,
             "typeClass": "primitive",
-            "value": "{{ title }}"
+            "value": "title"
           },
           {
             "typeName": "author",
@@ -89,14 +89,6 @@
             ]
           },
           {
-            "typeName": "language",
-            "multiple": true,
-            "typeClass": "controlledVocabulary",
-            "value": [
-              "English"
-            ]
-          },
-          {
             "typeName": "keyword",
             "multiple": true,
             "typeClass": "compound",
@@ -106,7 +98,7 @@
                   "typeName": "keywordValue",
                   "multiple": false,
                   "typeClass": "primitive",
-                  "value": "{{ keyword }}"
+                  "value": "keyword"
                 }
               }
               ]
@@ -197,13 +189,13 @@
                   "typeName": "dansSpatialPointX",
                   "multiple": false,
                   "typeClass": "primitive",
-                  "value": "{{ point[0]|int}}"
+                  "value": "12345"
                 },
                 "dansSpatialPointY": {
                   "typeName": "dansSpatialPointY",
                   "multiple": false,
                   "typeClass": "primitive",
-                  "value": "{{ point[1]|int}}"
+                  "value": "6789"
                 },
                 "dansSpatialPointScheme": {
                   "typeName": "dansSpatialPointScheme",
