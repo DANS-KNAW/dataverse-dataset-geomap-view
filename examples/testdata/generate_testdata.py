@@ -29,10 +29,14 @@ some point point_data for the experiments with the following properties:
 
 def create_dataset(api_token, server_url, parent, dataset_json):
     response = requests.post(server_url + '/api/dataverses/' + parent + '/datasets', 
-                  headers={'X-Dataverse-key': api_token, 'Content-type': 'application/json'}, 
+                  headers={'X-Dataverse-key':api_token, 'Content-type':'application/json'}, 
                   data=dataset_json)
 
+    # show all information when not successful
+    if response.status_code != 201:
+        print(response.text)
     response.raise_for_status()
+        
     return response.json()
 
 
@@ -71,14 +75,14 @@ if __name__ == '__main__':
     # output is not used now
     parser.add_argument('--output', type=str, default='testdata_pids.txt', help='Output file')
     args = parser.parse_args()
-
+    #print(args)
+    
     # TODO: parse from command line
     parent = 'root'
     server_url = 'https://dev.archaeology.datastations.nl'
     api_token = args.a 
     n = args.n
     output = args.output
-
     point_data = generate_point_data(n)
 
 
