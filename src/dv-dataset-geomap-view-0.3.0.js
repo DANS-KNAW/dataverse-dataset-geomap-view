@@ -39,8 +39,9 @@ function DvDatasetGeoMapViewer(options) {
     }
 
        
-    let allowOtherBaseMaps = options.allowOtherBaseMaps || false; // Experimental; allow the user to select other base maps (like satellite view)
- 
+    let allowOtherBaseMaps = options.allowOtherBaseMaps || false; // Allow the user to select other base maps (like satellite view)
+    let allowRetrievingMore = options.allowRetrievingMore || false; // Allow the user to retrieve more datasets
+
     // --- Other configuration options
     
     // Known issues: when switching to satellite view, after reload it's is back to the default view
@@ -207,7 +208,9 @@ function DvDatasetGeoMapViewer(options) {
     map.addLayer(markers);
   
     let baseUrl = alternativeBaseUrl ? alternativeBaseUrl : getBaseUrl();
+    let totalNumberOfDatasetsFound = 0;
     let start = 0;
+    let numPagesRetieved = 0;
     let pageSize = maxSearchRequestsPerPage;
     let numRetrieved = 0;
     let searchApiUrl = constructSearchApiUrl(baseUrl)
@@ -226,7 +229,14 @@ function DvDatasetGeoMapViewer(options) {
                 const t1 = performance.now();
                 console.log(`Result of ajax call took ${t1 - t0} milliseconds.`);
                 processSearchResult(result);
-                start = start + pageSize; // advance to the next page
+                numPagesRetieved++;
+                // determine if more could be retrieved
+                if (allowRetrievingMore && numPagesRetieved*pageSize < totalNumberOfDatasetsFound) {
+                    start = start + pageSize; // advance to the next page
+                    $('#' + geomapViewerId + '-startRetrievingMore').show();
+                } else {
+                    $('#' + geomapViewerId + '-startRetrievingMore').hide();
+                }
             }, 
             error: function(xhr, status, error) {
                 console.error("Error while doing search request: " + error);
@@ -239,6 +249,7 @@ function DvDatasetGeoMapViewer(options) {
 
     function processSearchResult(result) {
         const t0 = performance.now();
+        totalNumberOfDatasetsFound = result.data.total_count;
         console.log('Total of ' + result.data.total_count + " datasets found");
 
         let extractedFeatures = featureExtractor(result);//extractFeatures(result);
@@ -411,14 +422,27 @@ function DvDatasetGeoMapViewer(options) {
         let spinner = $('<span id="' + geomapViewerId + '-spinner-searchLocation" style="display:none;"></span>');
         //spinner.append('<span class="spinner-border" role="status" style="width: 1.2rem; height: 1.2rem;" ><span class="sr-only">Loading...</span></span>');
         // Note that we use a resource from the dataverse web application
-        spinner.append('<span>Loading...</span><img src="/resources/images/ajax-loading.gif" style="width: 1.2em; height: 1.2em;" />');
+        spinner.append('<span>&nbsp;</span><span>Loading...</span><img src="/resources/images/ajax-loading.gif" style="width: 1.2em; height: 1.2em;" />');
 
         controls.append(spinner);
         
+        if (allowRetrievingMore) {
+            // add link to start retrieving more datasets
+            let startRetrievingMore = $('<a href="#" id="' + geomapViewerId + '-startRetrievingMore" style="display:none; padding-left: 10px;">More...</a>');
+            startRetrievingMore.on('click', function (event) {
+                event.preventDefault();
+                $('#' + geomapViewerId + '-startRetrievingMore').hide();
+                // Note that most of the URL is the same, only the start parameter changes, but just construct it again
+                doSearchRequest(constructSearchApiUrl(baseUrl));
+            });
+            controls.append(startRetrievingMore);
+        }
+
         // More explanantion via tooltip     
         let tooltip = $(`<span>&nbsp;</span><span class="glyphicon glyphicon-question-sign tooltip-icon" data-toggle="tooltip" data-placement="auto top" data-trigger="hover" 
             data-original-title="Geographical map showing locations of Datasets when coordinates have been specified in the metadata. 
-            Multiple points per dataset are possible. Only up to the first ${maxSearchRequestsPerPage} datasets in the search results are used."></span>`);
+            Multiple points per dataset are possible. Initially only up to the first ${maxSearchRequestsPerPage} datasets in the search results are used. 
+            Using 'More...' the next ${maxSearchRequestsPerPage} will be retrieved. "></span>`);
         controls.append(tooltip);
         tooltip.tooltip();
 
