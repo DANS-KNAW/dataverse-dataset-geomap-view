@@ -80,7 +80,7 @@ if __name__ == '__main__':
     
     # TODO: parse from command line
     parent = 'root'
-    server_url = args.url #'https://dev.archaeology.datastations.nl'
+    server_url = args.url
     api_token = args.a 
     n = args.n
     output = args.output
