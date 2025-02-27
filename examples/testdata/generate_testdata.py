@@ -70,6 +70,7 @@ def generate_point_data(n):
 # main program
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate test datasets for the experiments')
+    parser.add_argument('-url', type=str, default='https://dev.archaeology.datastations.nl', help='Server URL')
     parser.add_argument('-n', type=int, default=1, help='Number of datasets')
     parser.add_argument('-a', type=str, help='API token', required=True)
     # output is not used now
@@ -79,7 +80,7 @@ if __name__ == '__main__':
     
     # TODO: parse from command line
     parent = 'root'
-    server_url = 'https://dev.archaeology.datastations.nl'
+    server_url = args.url
     api_token = args.a 
     n = args.n
     output = args.output
