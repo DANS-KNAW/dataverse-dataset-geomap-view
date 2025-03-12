@@ -27,7 +27,7 @@ With tabs it does the following:
 Using the development setup we have at DANS for our Archaeology Datastation, with vagrant and VirtualBox VM's. 
 However this code/html fragment could be inserted into the custom footer file of the `test` or `demo` servers of `archaeology.datastations.nl`. 
 
-The example[custom footer file](./examples/custom-footer.html) is in this repo. 
+The example[custom footer file](../examples/custom-footer.html) is in this repo. 
 
 Steps for developers with access to on the `dans-core-systems` repo:
 1. Get into the repo directory (assuming you have everything in place for the standard development). 
@@ -56,3 +56,8 @@ When editing the js file, you need two copy actions:
 - Allow selection of alternative base maps, like a satellite image. 
 
 - Allow downloading the geographical information on the map in GeoJSON format.
+
+## Tests 
+
+For testing purposes a Python script is provided that allows to add datasets with coordinates to the archive. This can be found in [the testdata folder](../examples/testdata). 
+Also, some stress testing has been done, the results and the JMeter file is provided in [the stresstests folder](../examples/testdata/stresstests). 
