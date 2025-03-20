@@ -481,20 +481,27 @@ let dansDvGeoMap = (function() {
                 // Note that there could be multiple points, even in different schemes
                 if (typeof dansSpatialPoint !== "undefined") {
                     for (let i = 0; i < dansSpatialPoint.value.length; i++) {
+                        if (dansSpatialPoint.value[i]["dansSpatialPointScheme"] === undefined ||
+                            dansSpatialPoint.value[i]["dansSpatialPointScheme"].value  === undefined ) {
+                                console.warn('Invalid dansSpatialPoint: Missing Scheme for: ' + value.global_id);
+                            continue;
+                        }
+                        let dansSpatialPointScheme = dansSpatialPoint.value[i]["dansSpatialPointScheme"].value;
+
                         dansSpatialPointX = dansSpatialPoint.value[i]["dansSpatialPointX"].value;
                         dansSpatialPointY = dansSpatialPoint.value[i]["dansSpatialPointY"].value;
                         let lat = 0;
                         let lon = 0;
-                        if (dansSpatialPoint.value[i]["dansSpatialPointScheme"].value === "RD (in m.)") {
+                        if (dansSpatialPointScheme === "RD (in m.)") {
                             latLon = convertRDtoWGS84(parseFloat(dansSpatialPointX), parseFloat(dansSpatialPointY));
                             lat = latLon.lat;
                             lon = latLon.lon;
-                        } else if ( dansSpatialPoint.value[i]["dansSpatialPointScheme"].value === "longitude/latitude (degrees)") {
+                        } else if ( dansSpatialPointScheme === "longitude/latitude (degrees)") {
                             // Assume WGS84 in decimal degrees, no conversion needed
                             lat = parseFloat(dansSpatialPointY);
                             lon = parseFloat(dansSpatialPointX);
                         } else {    
-                            console.warn('Spatial point scheme not recognized: ' + dansSpatialPoint.value[i]["dansSpatialPointScheme"].value);
+                            console.warn('Spatial point scheme not recognized: ' + dansSpatialPointScheme);
                             continue; // skip this point, because we don't know how to convert!
                         }
 
