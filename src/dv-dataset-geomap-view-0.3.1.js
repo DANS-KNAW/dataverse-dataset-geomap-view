@@ -22,10 +22,12 @@ function DvDatasetGeoMapViewer(options) {
     // Note that the filter query is specific for the metadata block
     // "dansSpatialBoxNorth:[* TO *]" for the boxes  
     // "dansSpatialPointX:[* TO *]" for the points
-    let locationCoordinatesFilterquery = encodeURI("dansSpatialPointX:[* TO *]");
+    let locationCoordinatesFilterquery = encodeURI("dansSpatialPointX:[* TO *] OR dansSpatialBoxNorth:[* TO *]");
 
     let alternativeBaseUrl; // optionally use an alternative base url instead of the one of the current web page
-
+    if (options.alternativeBaseUrl) {
+        alternativeBaseUrl = options.alternativeBaseUrl;
+    }
     // --- apply options if provided
 
     const maxSearchRequestsPerPage = options.maxSearchRequestsPerPage || 100; // default;  The max for the search API is 1000
@@ -260,20 +262,52 @@ function DvDatasetGeoMapViewer(options) {
 
         const markerList = [];
 
+        // Use different color for the marker balloon (icon) 
+        // if we have polygons, which is bounding box in simplest case
+        let redIcon = L.icon({
+            iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+        
         // Update the map; add the markers corresponding to the features
         // assume points only for now, boundingboxes(rectangles) should be done later
         for (feature of extractedFeatures) {
-            lon = feature.geometry.coordinates[0];
-            lat = feature.geometry.coordinates[1];
-            let marker = L.marker([lat, lon]);
+            if (feature.geometry.type === "Point") {
+                lon = feature.geometry.coordinates[0];
+                lat = feature.geometry.coordinates[1];
+                let marker = L.marker([lat, lon]);
 
-            // Note that we do not want the DOI url; instead  a direct url to prevent extra redirect
-            const dataset_url = baseUrl + '/dataset.xhtml?persistentId=' + feature.properties.id;
-            marker.bindPopup('<a href="' + dataset_url + '"' + '>' + feature.properties.name + '</a><br>' 
-                + feature.properties.authors + "; " 
-                + feature.properties.publication_date + ", <br>" 
-                + feature.properties.id);
-            markerList.push(marker);
+                // Note that we do not want the DOI url; instead  a direct url to prevent extra redirect
+                const dataset_url = baseUrl + '/dataset.xhtml?persistentId=' + feature.properties.id;
+                marker.bindPopup('<a href="' + dataset_url + '"' + '>' + feature.properties.name + '</a><br>' 
+                    + feature.properties.authors + "; " 
+                    + feature.properties.publication_date + ", <br>" 
+                    + feature.properties.id);
+                markerList.push(marker);
+            } else if (feature.geometry.type === "Polygon") {
+                // calculate center of the polygon (could be bounding box)
+                // Note that we only use the first polygon, there could be more in the future
+                let polygon = L.polygon(feature.geometry.coordinates[0], {color: 'red'});
+                // 'red' marker at center
+                let bounds = polygon.getBounds();
+                let center = bounds.getCenter();
+                lon = center.lng;
+                lat = center.lat;
+
+                //let marker = L.marker([lat, lon], {icon: redIcon, id: feature.properties.id, key: markerKey}); // Note that we add the id to the marker
+                let marker = L.marker([lat, lon], {icon: redIcon, id: feature.properties.id}); // Note that we add the id to the marker
+                // Note that we do not want the DOI url; instead  a direct url to prevent extra redirect
+                const dataset_url = baseUrl + '/dataset.xhtml?persistentId=' + feature.properties.id;
+                marker.bindPopup('<a href="' + dataset_url + '"' + '>' + feature.properties.name + '</a><br>' 
+                    + feature.properties.authors + "; " 
+                    + feature.properties.publication_date + ", <br>" 
+                    + feature.properties.id);
+                markerList.push(marker);
+            }
         }
         markers.addLayers(markerList);
 
@@ -475,10 +509,11 @@ let dansDvGeoMap = (function() {
                 typeof value.metadataBlocks.dansTemporalSpatial !== "undefined") {
                 let authors   = value.authors.map(x => x).join(", ");
                 let publicationDate = value.published_at.substring(0, 10); // fixed format
-                // Only handle points for now!
-                // Note that we could also have bounding boxes (rectangles) in the metadata
-                dansSpatialPoint = value.metadataBlocks.dansTemporalSpatial.fields.find(x => x.typeName === "dansSpatialPoint");
-                // Note that there could be multiple points, even in different schemes
+                
+                // Handle points and bounding boxes
+                // Note that there could be multiple, even in different schemes
+                // First points
+                let dansSpatialPoint = value.metadataBlocks.dansTemporalSpatial.fields.find(x => x.typeName === "dansSpatialPoint");
                 if (typeof dansSpatialPoint !== "undefined") {
                     for (let i = 0; i < dansSpatialPoint.value.length; i++) {
                         if (dansSpatialPoint.value[i]["dansSpatialPointScheme"] === undefined ||
@@ -528,6 +563,60 @@ let dansDvGeoMap = (function() {
                         resultFeatureArr.push(feature);
                     }
                 } // End point(s) handling
+
+                // Bounding boxes
+                let dansSpatialBox = value.metadataBlocks.dansTemporalSpatial.fields.find(x => x.typeName === "dansSpatialBox");
+                if (typeof dansSpatialBox !== "undefined") {
+                    for (let i = 0; i < dansSpatialBox.value.length; i++) {
+                        if (dansSpatialBox.value[i]["dansSpatialBoxScheme"] === undefined ||
+                            dansSpatialBox.value[i]["dansSpatialBoxScheme"].value  === undefined ) {
+                                console.warn('Invalid dansSpatialBox: Missing Scheme for: ' + value.global_id);
+                            continue;
+                        }
+                        let dansSpatialBoxScheme = dansSpatialBox.value[i]["dansSpatialBoxScheme"].value;
+
+                        dansSpatialBoxNorth = dansSpatialBox.value[i]["dansSpatialBoxNorth"].value;
+                        dansSpatialBoxEast = dansSpatialBox.value[i]["dansSpatialBoxEast"].value;
+                        dansSpatialBoxSouth = dansSpatialBox.value[i]["dansSpatialBoxSouth"].value;
+                        dansSpatialBoxWest = dansSpatialBox.value[i]["dansSpatialBoxWest"].value;
+                        console.log('Spatial box: ' + dansSpatialBoxNorth + ', ' + dansSpatialBoxEast + ', ' + dansSpatialBoxSouth + ', ' + dansSpatialBoxWest);
+                        // calculate lat, lon in WGS84, assuming new RD in m.
+
+                        // initialize the feature with the bounding box, WGS8 default
+                        var latLon_NE = {lat: parseFloat(dansSpatialBoxNorth), lon: parseFloat(dansSpatialBoxEast)};
+                        var latLon_SW = {lat: parseFloat(dansSpatialBoxSouth), lon: parseFloat(dansSpatialBoxWest)};
+                        if (dansSpatialBoxScheme === "RD (in m.)") {
+                            // convert to WGS84
+                            latLon_NE = convertRDtoWGS84(latLon_NE.lon, latLon_NE.lat);
+                            latLon_SW = convertRDtoWGS84(latLon_SW.lon, latLon_SW.lat);
+                        } else if ( dansSpatialBoxScheme === "longitude/latitude (degrees)") {
+                            // Assume WGS84 in decimal degrees, no conversion needed
+                        } else {
+                            console.warn('Spatial box scheme not recognized: ' + dansSpatialBoxScheme);
+                            continue; // skip this box, because we don't know how to convert!
+                        }
+                        const feature = {
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": [[[latLon_SW.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_SW.lon]]] 
+                            },
+                            "properties": {
+                                "name": value.name + " (bounding box)!", // add something to the name to indicate it is a bounding box!
+                                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
+                                "authors": authors,
+                                "publication_date": publicationDate,
+                                "id": value.global_id
+                            }
+                        }
+                        // console.log(feature);
+                        resultFeatureArr.push(feature);
+                    }
+                } // End box(es) handling
             }
         });
         const t1 = performance.now();
