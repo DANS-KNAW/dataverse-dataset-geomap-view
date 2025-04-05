@@ -483,6 +483,17 @@ function DvDatasetGeoMapViewer(options) {
         mapviewDiv.append(controls);
         mapviewDiv.append('<div id="' + mapInsertionId + '" style="height:480px;"></div>');
 
+        // add legend at the bottom, assume we always can have points and or bounding boxes
+        let legend = $('<div style="padding: 5px 0 0 5px;margin: 5px;">' + 
+            'Location Markers: ' +
+            '<img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" style="height: 2.4rem;" />' +
+            ' Point' + 
+            '; ' + '<img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" style="height: 2.4rem;" />' +
+            ' Area ' + 
+            ' - Can be indicative or approximately; for instance the center of a bounding box' +
+            '</div>');
+        mapviewDiv.append(legend);
+
         return mapviewDiv;
     }
 }
