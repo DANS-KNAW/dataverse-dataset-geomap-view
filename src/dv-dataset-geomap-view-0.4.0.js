@@ -617,7 +617,7 @@ let dansDvGeoMap = (function() {
                                     [latLon_SW.lat, latLon_SW.lon]]] 
                             },
                             "properties": {
-                                "name": value.name + " (bounding box)!", // add something to the name to indicate it is a bounding box!
+                                "name": value.name,
                                 "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
                                 "authors": authors,
                                 "publication_date": publicationDate,
