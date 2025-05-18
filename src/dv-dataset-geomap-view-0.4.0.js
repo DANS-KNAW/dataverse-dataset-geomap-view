@@ -790,13 +790,16 @@ let dansDvGeoMap = (function() {
         return resultFeatureArr;
     };
 
-    const extractPointsFromDansArchaeologyMDText = (text) => {
+    const extractPointsFromDansArchaeologyMetaDataOnPage = (metadataBlockPointName) =>  {
+        let dansSpatialPointText = $(`#metadata_${metadataBlockPointName} > td`).text();
+        console.log('DansSpatialPoint: ' + dansSpatialPointText);
+
         const points = []; // point is not a full feature!
 
         // Note that we know there is a newline separation we will use the regexp matchAll
         // extract Longitude/latitude (degrees)'
          // To match a number, float or int, with optional decimal point: (-?\d+\.?\d*)\s+
-        let dansSpatialPointDegreesMatches = text.matchAll(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*) Longitude\/latitude \(degrees\)/g);
+        let dansSpatialPointDegreesMatches = dansSpatialPointText.matchAll(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*) Longitude\/latitude \(degrees\)/g);
         for (const match of dansSpatialPointDegreesMatches) {
             console.log('Lon/Lat (degrees) coordinates found');
             let lon = match[1];
@@ -809,7 +812,7 @@ let dansDvGeoMap = (function() {
             points.push({"coordinates":[lat, lon], title: `Lon/Lat (degrees): ${lon}, ${lat}`});
         }
         // try matching RD, no negative numbers, some use decimal point
-        let dansSpatialPointRDMatches = text.matchAll(/(\d+\.?\d*)\s+(\d+\.?\d*) RD \(in m\.\)/g);
+        let dansSpatialPointRDMatches = dansSpatialPointText.matchAll(/(\d+\.?\d*)\s+(\d+\.?\d*) RD \(in m\.\)/g);
         for (const match of dansSpatialPointRDMatches) {
             console.log('RD (in m.) coordinates found');
             // convert to lat, lon
@@ -824,11 +827,14 @@ let dansDvGeoMap = (function() {
         return points;
     };
 
-    const extractPolygonsFromDansArchaeologyMDText = (text) =>  {
+    const extractPolygonsFromDansArchaeologyMetaDataOnPage = (metadataBlockBoxName) =>  {
+        let dansSpatialBoxText = $(`#metadata_${metadataBlockBoxName} > td`).text();
+        console.log('DansSpatialBox: ' + dansSpatialBoxText)
+
         // for DANS arch. we have bounding boxes, but we handle them as polygons
         let polygons = [];
         // To match a number, float or int, with optional decimal point: (-?\d+\.?\d*)\s+
-        let dansSpatialBoxDegreesMatches = text.matchAll(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*) Longitude\/latitude \(degrees\)/g);
+        let dansSpatialBoxDegreesMatches = dansSpatialBoxText.matchAll(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*) Longitude\/latitude \(degrees\)/g);
         for (const match of dansSpatialBoxDegreesMatches) {
             console.log('Lon/Lat (degrees) coordinates found');
             let dansSpatialBoxNorth = match[1];
@@ -859,7 +865,7 @@ let dansDvGeoMap = (function() {
         }
 
         // try matching RD, no negative numbers, some use decimal point
-        let dansSpatialBoxRDMatches = text.matchAll(/(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*) RD \(in m\.\)/g);
+        let dansSpatialBoxRDMatches = dansSpatialBoxText.matchAll(/(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*) RD \(in m\.\)/g);
         for (const match of dansSpatialBoxRDMatches) {
             console.log('RD (in m.) coordinates found');
             let dansSpatialBoxNorth = match[1];
@@ -891,16 +897,17 @@ let dansDvGeoMap = (function() {
         }
 
         return polygons;
-    }
+    };
 
     return {
         extractDansArchaeologyFeatures, extractDansDccdFeatures, 
-        extractPointsFromDansArchaeologyMDText, extractPolygonsFromDansArchaeologyMDText,
+        extractPointsFromDansArchaeologyMetaDataOnPage, extractPolygonsFromDansArchaeologyMetaDataOnPage,
     };
 })();
 
 /**
- * Maps for the Dataset Metdata Page
+ * Maps for the Dataset Metadata Page,
+ * Adds maps in the metadata block with coordinates, for points boxes or both
  * 
  * @param {} options 
  */
@@ -909,64 +916,92 @@ function DvDatasetMDGeoMapViewer(options) {
 
     console.log('DvDatasetMDGeoMapViewer');
 
-    // Detect if we have bounding box metadata
-    let metadata_dansSpatialBox = $('#metadata_dansSpatialBox');
-    if (metadata_dansSpatialBox.length > 0) {
-        console.log('DansSpatialBox metadata found');
-
-        let dansSpatialBoxText = $('#metadata_dansSpatialBox > td').text();
-        console.log('DansSpatialBox: ' + dansSpatialBoxText);
-        let polygons = dansDvGeoMap.extractPolygonsFromDansArchaeologyMDText(dansSpatialBoxText);
-        
-        // bounding boxes in their own map ?????
-        // check if we have polygons
-        if (polygons.length > 0) {
-            console.log('Polygons: ' + polygons);
-            // detect tab selection for datasetForm:tabView
-            $('#datasetForm').on('click', function(event) {
-                // match 'Temporal and Spatial Coverage'  with regex
-                // Note that some parent element will also have this ...
-                // could try to narrow it down, luckily we chEck for existence of the metadata_dansSpatialPoint
-                // in that createMapPreview function
-                let matchTitle = event.target.textContent.match(/\s*Temporal and Spatial Coverage\s*/);
-                if (matchTitle !== null) {
-                    console.log('Temporal and Spatial Coverage clicked');
-                    createMapPreviewBoxes('#metadata_dansSpatialBox', polygons);
-                    // if (mapPreviewLocation !== undefined && mapPreviewLocation !== null) {
-                    // could do some stuff here
-                }
-            });
-        } else {
-            console.log('No polygons found in dansSpatialBox: ' + dansSpatialBoxText);
-        }
-    }
+    // where to get the coordinates and how to extract shoudl be made configuarble
+    // inital attemp..
     
-    // Detect if we have points metadata
-    let metadata_dansSpatialPoint = $('#metadata_dansSpatialPoint');
-    if (metadata_dansSpatialPoint.length > 0) {
-        console.log('DansSpatialPoint metadata found');
-        let dansSpatialPointText = $('#metadata_dansSpatialPoint > td').text();
-            
-        console.log('DansSpatialPoint: ' + dansSpatialPointText);
-        
-        let points = dansDvGeoMap.extractPointsFromDansArchaeologyMDText(dansSpatialPointText);
-        
-        if (points.length > 0 ) {
-            console.log('Points: ' + points);
+    // --- Archaeology (Dataverse archive) specific settings
+    //let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
+    // first the title of the metadat block that contains the coordinates, 
+    // need this to find the metadata
+    let metadatBlockTitle = 'Temporal and Spatial Coverage';
+    let metadataBlockBoxName = 'dansSpatialBox';
+    let metadataBlockPointName = 'dansSpatialPoint'; 
+    // note that sometimes we have only box or only point. 
+    let polygonExtractor = dansDvGeoMap.extractPolygonsFromDansArchaeologyMetaDataOnPage;
+    let pointExtractor = dansDvGeoMap.extractPointsFromDansArchaeologyMetaDataOnPage;
 
-            // detect tab selection for datasetForm:tabView
-            $('#datasetForm').on('click', function(event) {
-                let matchTitle = event.target.textContent.match(/\s*Temporal and Spatial Coverage\s*/);
-                if (matchTitle !== null) {
-                    console.log('Temporal and Spatial Coverage clicked');
-                    mapPreviewLocation = createMapPreviewPoints('#metadata_dansSpatialPoint', points);
-                    // if (mapPreviewLocation !== undefined && mapPreviewLocation !== null) {
-                    // could do some stuff here
-                }
-            });
-        } else {
-            console.log('No points found in dansSpatialPoint: ' + dansSpatialPointText);
+
+    // check if we have what we need
+    if (typeof metadatBlockTitle === "undefined") {
+        console.warn('No metadata block title found, cannot create map');
+        return;
+    }
+
+    if (typeof metadataBlockBoxName !== "undefined") {
+        // Detect if we have bounding box metadata
+        let metadataBlockBoxId = `metadata_${metadataBlockBoxName}`;
+        let metadata_spatialBox = $('#' + metadataBlockBoxId);
+        if (metadata_spatialBox.length > 0) {
+            console.log('Spatial Box metadata found');
+
+            let polygons = polygonExtractor(metadataBlockBoxName);
+
+            // bounding boxes in their own map
+            // check if we have polygons
+            if (polygons.length > 0) {
+                console.log('Polygons: ' + polygons);
+                // detect tab selection for datasetForm:tabView
+                $('#datasetForm').on('click', function(event) {
+                    // match 'Temporal and Spatial Coverage'  with regex
+                    // Note that some parent element will also have this ...
+                    // could try to narrow it down, luckily we chEck for existence of the metadata_dansSpatialPoint
+                    // in that createMapPreview function
+                    //let matchTitle = event.target.textContent.match(/\s*Temporal and Spatial Coverage\s*/);
+                    let matchTitle = event.target.textContent.match(new RegExp(`\\s*${metadatBlockTitle}\\s*`));
+
+                    if (matchTitle !== null) {
+                        console.log(`Clicked ${metadatBlockTitle}`);
+                        createMapPreviewBoxes('#' + metadataBlockBoxId, polygons);
+                        // if (mapPreviewLocation !== undefined && mapPreviewLocation !== null) {
+                        // could do some stuff here
+                    }
+                });
+            } else {
+                console.log(`No polygons found in ${metadataBlockBoxName}`);
+            }
         }
+    } else {
+        console.log(`No metadata block for bounding boxes configured`);
+    }
+
+    if (typeof metadataBlockPointName !== "undefined") {
+        // Detect if we have points metadata
+        let metadataBlockPointId = `metadata_${metadataBlockPointName}`;
+        let metadata_spatialPoint = $('#' + metadataBlockPointId);
+        if (metadata_spatialPoint.length > 0) {
+            console.log('Spatial Point metadata found');
+            
+            let points = pointExtractor(metadataBlockPointName);
+            
+            if (points.length > 0 ) {
+                console.log('Points: ' + points);
+
+                // detect tab selection for datasetForm:tabView
+                $('#datasetForm').on('click', function(event) {
+                    let matchTitle = event.target.textContent.match(new RegExp(`\\s*${metadatBlockTitle}\\s*`));
+                    if (matchTitle !== null) {
+                        console.log(`Clicked ${metadatBlockTitle}`);
+                        mapPreviewLocation = createMapPreviewPoints('#' + metadataBlockPointId, points);
+                        // if (mapPreviewLocation !== undefined && mapPreviewLocation !== null) {
+                        // could do some stuff here
+                    }
+                });
+            } else {
+                console.log(`No points found in ${metadataBlockPointName}`);
+            }
+        }
+    } else {  
+        console.log(`No metadata block for points configured`);
     }
 
     /* Functions */
