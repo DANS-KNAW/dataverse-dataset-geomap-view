@@ -490,7 +490,7 @@ function DvDatasetGeoMapViewer(options) {
             ' Point' + 
             '; ' + '<img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" style="height: 2.4rem;" />' +
             ' Area ' + 
-            ' - Can be indicative or approximately; for instance the center of a bounding box' +
+            ' - The marker is at the center of the bounding box' +
             '</div>');
         mapviewDiv.append(legend);
 
