@@ -35,7 +35,7 @@ Steps for developers with access to on the `dans-core-systems` repo:
 3. Copy the custom footer file into the `dans-core-systems/shared` dir. 
 4. SSH into the dev box with `vagrant ssh dev_archaeology`.
 5. Set the custom footer to point to that `/vagrant/shared` folder: `curl -X PUT -d '/vagrant/shared/custom-footer.html' http://localhost:8080/api/admin/settings/:FooterCustomizationFile`. 
-6. The `dv-dataset-geomap-view-0.1.0.js` file must be placed on the VM in `/var/www/html/custom/geomapview`. 
+6. The `dv-dataset-geomap-view-<version>.js` file must be placed on the VM in `/var/www/html/custom/geomapview`. 
 
 When you edit that custom footer file in the `shared` directory just a browser page reload would be enough to see the difference. If you edit it in this git repo, then copy it to that shared directory after every change. Use the browser debugger/inspection tool to see those console messages and or any errors occurring. 
 
