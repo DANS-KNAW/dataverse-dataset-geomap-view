@@ -790,5 +790,371 @@ let dansDvGeoMap = (function() {
         return resultFeatureArr;
     };
 
-    return {extractDansArchaeologyFeatures, extractDansDccdFeatures};
+    const extractPointsFromDansArchaeologyMetaDataOnPage = (metadataBlockPointName) =>  {
+        let dansSpatialPointText = $(`#metadata_${metadataBlockPointName} > td`).text();
+        console.log('DansSpatialPoint: ' + dansSpatialPointText);
+
+        const points = []; // point is not a full feature!
+
+        // Note that we know there is a newline separation we will use the regexp matchAll
+        // extract Longitude/latitude (degrees)'
+         // To match a number, float or int, with optional decimal point: (-?\d+\.?\d*)\s+
+        let dansSpatialPointDegreesMatches = dansSpatialPointText.matchAll(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*) Longitude\/latitude \(degrees\)/g);
+        for (const match of dansSpatialPointDegreesMatches) {
+            console.log('Lon/Lat (degrees) coordinates found');
+            let lon = match[1];
+            let lat = match[2];
+            console.log('Lat: ' + lat + '; Lon: ' + lon);
+            if (!isWGS84CoordinateValid(lat, lon) ) {
+                console.warn('Invalid WGS84 coordinate: ' + lat + ', ' + lon);
+                continue; // skip this point, because leaflet map can break on invalid coordinates!
+            }
+            points.push({"coordinates":[lat, lon], title: `Lon/Lat (degrees): ${lon}, ${lat}`});
+        }
+        // try matching RD, no negative numbers, some use decimal point
+        let dansSpatialPointRDMatches = dansSpatialPointText.matchAll(/(\d+\.?\d*)\s+(\d+\.?\d*) RD \(in m\.\)/g);
+        for (const match of dansSpatialPointRDMatches) {
+            console.log('RD (in m.) coordinates found');
+            // convert to lat, lon
+            let latLon = convertRDtoWGS84(match[1], match[2]);
+            console.log('Lat: ' + latLon.lat + '; Lon: ' + latLon.lon);
+            if (!isWGS84CoordinateValid(latLon.lat, latLon.lon) ) {
+                console.warn('Invalid WGS84 coordinate: ' + latLon.lat + ', ' + latLon.lon);
+                continue; // skip this point, because leaflet map can break on invalid coordinates!
+            }
+            points.push({"coordinates":[latLon.lat, latLon.lon], "title": `RD (in m.): ${match[1]}, ${match[2]}`});
+        }
+        return points;
+    };
+
+    const extractPolygonsFromDansArchaeologyMetaDataOnPage = (metadataBlockBoxName) =>  {
+        let dansSpatialBoxText = $(`#metadata_${metadataBlockBoxName} > td`).text();
+        console.log('DansSpatialBox: ' + dansSpatialBoxText)
+
+        // for DANS arch. we have bounding boxes, but we handle them as polygons
+        let polygons = [];
+        // To match a number, float or int, with optional decimal point: (-?\d+\.?\d*)\s+
+        let dansSpatialBoxDegreesMatches = dansSpatialBoxText.matchAll(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*) Longitude\/latitude \(degrees\)/g);
+        for (const match of dansSpatialBoxDegreesMatches) {
+            console.log('Lon/Lat (degrees) coordinates found');
+            let dansSpatialBoxNorth = match[1];
+            let dansSpatialBoxEast = match[2];
+            let dansSpatialBoxSouth = match[3];
+            let dansSpatialBoxWest = match[4];
+
+            // initialize the feature with the bounding box, WGS8 default
+            var latLon_NE = {lat: parseFloat(dansSpatialBoxNorth), lon: parseFloat(dansSpatialBoxEast)};
+            var latLon_SW = {lat: parseFloat(dansSpatialBoxSouth), lon: parseFloat(dansSpatialBoxWest)};
+
+            if (!isWGS84CoordinateValid(latLon_NE.lat, latLon_NE.lon) ) {
+                console.warn('Invalid WGS84 coordinate: ' + latLon_NE.lat + ', ' + latLon_NE.lon);
+                continue; // skip this point, because leaflet map can break on invalid coordinates!
+            }
+            if (!isWGS84CoordinateValid(latLon_SW.lat, latLon_SW.lon) ) {
+                console.warn('Invalid WGS84 coordinate: ' + latLon_SW.lat + ', ' + latLon_SW.lon);
+                continue; // skip this point, because leaflet map can break on invalid coordinates!
+            }
+            // valid feature
+            polygons.push({"coordinates": [[latLon_SW.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_SW.lon]], 
+                                    "title": `Lon/Lat (degrees): ${dansSpatialBoxNorth}, ${dansSpatialBoxEast}, 
+                                    ${dansSpatialBoxSouth}, ${dansSpatialBoxWest}`});
+        }
+
+        // try matching RD, no negative numbers, some use decimal point
+        let dansSpatialBoxRDMatches = dansSpatialBoxText.matchAll(/(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*) RD \(in m\.\)/g);
+        for (const match of dansSpatialBoxRDMatches) {
+            console.log('RD (in m.) coordinates found');
+            let dansSpatialBoxNorth = match[1];
+            let dansSpatialBoxEast = match[2];
+            let dansSpatialBoxSouth = match[3];
+            let dansSpatialBoxWest = match[4];
+
+            var latLon_NE = {lat: parseFloat(dansSpatialBoxNorth), lon: parseFloat(dansSpatialBoxEast)};
+            var latLon_SW = {lat: parseFloat(dansSpatialBoxSouth), lon: parseFloat(dansSpatialBoxWest)};
+            // convert to WGS84
+            latLon_NE = convertRDtoWGS84(latLon_NE.lon, latLon_NE.lat);
+            latLon_SW = convertRDtoWGS84(latLon_SW.lon, latLon_SW.lat);
+            if (!isWGS84CoordinateValid(latLon_NE.lat, latLon_NE.lon) ) {
+                console.warn('Invalid WGS84 coordinate: ' + latLon_NE.lat + ', ' + latLon_NE.lon);
+                continue; // skip this point, because leaflet map can break on invalid coordinates!
+            }
+            if (!isWGS84CoordinateValid(latLon_SW.lat, latLon_SW.lon) ) {
+                console.warn('Invalid WGS84 coordinate: ' + latLon_SW.lat + ', ' + latLon_SW.lon);
+                continue; // skip this point, because leaflet map can break on invalid coordinates!
+            }
+            // valid feature
+            polygons.push({"coordinates": [[latLon_SW.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_SW.lon]], 
+                                    "title": `RD (in m.): ${dansSpatialBoxNorth}, ${dansSpatialBoxEast}, 
+                                    ${dansSpatialBoxSouth}, ${dansSpatialBoxWest}`});
+        }
+
+        return polygons;
+    };
+
+    return {
+        extractDansArchaeologyFeatures, extractDansDccdFeatures, 
+        extractPointsFromDansArchaeologyMetaDataOnPage, extractPolygonsFromDansArchaeologyMetaDataOnPage,
+    };
 })();
+
+/**
+ * Maps for the Dataset Metadata Page,
+ * Adds maps in the metadata block with coordinates, for points boxes or both
+ * 
+ * @param {} options 
+ */
+function DvDatasetMDGeoMapViewer(options) {
+    options = options || {}; // nothing yet
+
+    console.log('DvDatasetMDGeoMapViewer');
+
+    // where to get the coordinates and how to extract shoudl be made configuarble
+    // inital attemp..
+    
+    // --- Archaeology (Dataverse archive) specific settings
+    //let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
+    // first the title of the metadat block that contains the coordinates, 
+    // need this to find the metadata
+    let metadatBlockTitle = 'Temporal and Spatial Coverage';
+    let metadataBlockBoxName = 'dansSpatialBox';
+    let metadataBlockPointName = 'dansSpatialPoint'; 
+    // note that sometimes we have only box or only point. 
+    let polygonExtractor = dansDvGeoMap.extractPolygonsFromDansArchaeologyMetaDataOnPage;
+    let pointExtractor = dansDvGeoMap.extractPointsFromDansArchaeologyMetaDataOnPage;
+
+
+    // check if we have what we need
+    if (typeof metadatBlockTitle === "undefined") {
+        console.warn('No metadata block title found, cannot create map');
+        return;
+    }
+
+    if (typeof metadataBlockBoxName !== "undefined") {
+        // Detect if we have bounding box metadata
+        let metadataBlockBoxId = `metadata_${metadataBlockBoxName}`;
+        let metadata_spatialBox = $('#' + metadataBlockBoxId);
+        if (metadata_spatialBox.length > 0) {
+            console.log('Spatial Box metadata found');
+
+            let polygons = polygonExtractor(metadataBlockBoxName);
+
+            // bounding boxes in their own map
+            // check if we have polygons
+            if (polygons.length > 0) {
+                console.log('Polygons: ' + polygons);
+                // detect tab selection for datasetForm:tabView
+                $('#datasetForm').on('click', function(event) {
+                    // match 'Temporal and Spatial Coverage'  with regex
+                    // Note that some parent element will also have this ...
+                    // could try to narrow it down, luckily we chEck for existence of the metadata_dansSpatialPoint
+                    // in that createMapPreview function
+                    //let matchTitle = event.target.textContent.match(/\s*Temporal and Spatial Coverage\s*/);
+                    let matchTitle = event.target.textContent.match(new RegExp(`\\s*${metadatBlockTitle}\\s*`));
+
+                    if (matchTitle !== null) {
+                        console.log(`Clicked ${metadatBlockTitle}`);
+                        createMapPreviewBoxes('#' + metadataBlockBoxId, polygons);
+                        // if (mapPreviewLocation !== undefined && mapPreviewLocation !== null) {
+                        // could do some stuff here
+                    }
+                });
+            } else {
+                console.log(`No polygons found in ${metadataBlockBoxName}`);
+            }
+        }
+    } else {
+        console.log(`No metadata block for bounding boxes configured`);
+    }
+
+    if (typeof metadataBlockPointName !== "undefined") {
+        // Detect if we have points metadata
+        let metadataBlockPointId = `metadata_${metadataBlockPointName}`;
+        let metadata_spatialPoint = $('#' + metadataBlockPointId);
+        if (metadata_spatialPoint.length > 0) {
+            console.log('Spatial Point metadata found');
+            
+            let points = pointExtractor(metadataBlockPointName);
+            
+            if (points.length > 0 ) {
+                console.log('Points: ' + points);
+
+                // detect tab selection for datasetForm:tabView
+                $('#datasetForm').on('click', function(event) {
+                    let matchTitle = event.target.textContent.match(new RegExp(`\\s*${metadatBlockTitle}\\s*`));
+                    if (matchTitle !== null) {
+                        console.log(`Clicked ${metadatBlockTitle}`);
+                        mapPreviewLocation = createMapPreviewPoints('#' + metadataBlockPointId, points);
+                        // if (mapPreviewLocation !== undefined && mapPreviewLocation !== null) {
+                        // could do some stuff here
+                    }
+                });
+            } else {
+                console.log(`No points found in ${metadataBlockPointName}`);
+            }
+        }
+    } else {  
+        console.log(`No metadata block for points configured`);
+    }
+
+    /* Functions */
+
+    function createMapPreviewPoints(id, points) {
+        const preview_id_prefix = 'points' + '_';
+
+        //$(id).find('#mapPreview').remove(); // then with every click we remove adn reset the map preview
+        // If I just return when it is there
+        if ($(id).find('#' + preview_id_prefix + 'mapPreview').length > 0 ) {
+            console.log('Map preview already exists');
+            return null; // return  if found, nothing to do
+        }
+
+        // create a map preview
+        let mapPreview = $('<div id="' + preview_id_prefix + 'mapPreview"></div>');
+        $(id).append(mapPreview);
+
+        // add a map from OpenStreetMap, without leaflet, but we could use leaflet on other places in the page
+        //mapPreview.append(`<iframe width="425" height="350" 
+        //src="https://www.openstreetmap.org/export/embed.html?bbox=4.335222244262696%2C52.076967398325245%2C4.34735655784607%2C52.08255213979543&amp;layer=mapnik&amp;
+        //marker=${lat}%2C${lon}" style="border: 1px solid black"></iframe>
+        //   <br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
+        //
+        //mapPreview.append(`<br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
+        
+        // use leaflet to show the map
+        let mapDiv = $('<div id="' + preview_id_prefix + 'geomapPreviewLocation" style="width:320px;height:240px;min-height:240px;border:1px solid;margin-bottom:5px;"></div>');
+        mapPreview.append(mapDiv);
+        // create a leaflet map
+        let mapPreviewLocation = L.map('' + preview_id_prefix + 'geomapPreviewLocation').setView([52.0, 5.0], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+                '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+                'Imagery © <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+        }).addTo(mapPreviewLocation);
+
+        let markers = [];
+        // get each point from points
+        for (let i = 0; i < points.length; i++) {
+            let point = points[i];
+            console.log('Point: ' + point.coordinates);
+            let lat = point.coordinates[0];
+            let lon = point.coordinates[1];
+            // add a marker for each point
+            let marker = L.marker([lat, lon])
+                .bindPopup(point.title);
+            markers.push(marker);
+        }
+        const featureGroup = L.featureGroup(markers).addTo(mapPreviewLocation);
+        // zoom to extend; show all markers but zoomed in as much as possible
+        mapPreviewLocation.fitBounds(featureGroup.getBounds(), {padding: [20, 20]});
+        mapPreviewLocation.invalidateSize();
+        // since all this is part of (animated) bootstrap (PrimeFaces) stuff for the panel this is on
+        // we need to trigger a resize event to get the map to show correctly
+        // When incorrect, just a little manual browser window resizing seems to fix it....
+        // Now to fix it we need to do the invalidateSize  with a delay !    
+        setTimeout(() => {
+            mapPreviewLocation.invalidateSize();
+            mapPreviewLocation.fitBounds(featureGroup.getBounds());
+            // make the bounds a bit wider
+            mapPreviewLocation.fitBounds(featureGroup.getBounds(), {padding: [20, 20]});
+            // window.dispatchEvent(new Event('resize'));
+        }, 300); // slight delay helps with animations/layout shifts
+    }
+
+    function createMapPreviewBoxes(id, polygons) {
+        const preview_id_prefix = 'boxes' + '_';
+        //$(id).find('#mapPreview').remove(); // then with every click we remove adn reset the map preview
+        // If I just return when it is there
+        if ($(id).find('#' + preview_id_prefix + 'mapPreview').length > 0 ) {
+            console.log('Map preview already exists');
+            return null; // return  if found, nothing to do
+        }
+
+        // create a map preview
+        let mapPreview = $('<div id="' + preview_id_prefix + 'mapPreview"></div>');
+        $(id).append(mapPreview);
+
+        // Use different color for the marker balloon (icon) 
+        // if we have polygons, which is bounding box in simplest case
+        let redIcon = L.icon({
+            iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        // add a map from OpenStreetMap, without leaflet, but we could use leaflet on other places in the page
+        //mapPreview.append(`<iframe width="425" height="350" 
+        //src="https://www.openstreetmap.org/export/embed.html?bbox=4.335222244262696%2C52.076967398325245%2C4.34735655784607%2C52.08255213979543&amp;layer=mapnik&amp;
+        //marker=${lat}%2C${lon}" style="border: 1px solid black"></iframe>
+        //   <br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
+        //
+        //mapPreview.append(`<br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
+        
+        // use leaflet to show the map
+        let mapDiv = $('<div id="' + preview_id_prefix + 'geomapPreviewLocation" style="width:320px;height:240px;min-height:240px;border:1px solid;margin-bottom:5px;"></div>');
+        mapPreview.append(mapDiv);
+        // create a leaflet map
+        let mapPreviewLocation = L.map('' + preview_id_prefix + 'geomapPreviewLocation').setView([52.0, 5.0], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+                '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+                'Imagery © <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+        }).addTo(mapPreviewLocation);
+
+        let markers = [];
+        // get each point from points
+        for (let i = 0; i < polygons.length; i++) {
+            let polygon = polygons[i];
+            console.log('polygon: ' + polygon.coordinates);
+
+            // calculate center of the polygon (could be bounding box)
+            // Note that we only use the first polygon, there could be more in the future
+            let p = L.polygon(polygon.coordinates, {color: 'red'});
+
+            // add the polygon to the map
+            //p.addTo(mapPreviewLocation);
+            markers.push(p); // markers name is misleading , 
+            // should be features or we put the polygons in different layer?
+
+            // 'red' marker at center
+            let bounds = p.getBounds();
+            let center = bounds.getCenter();
+            lon = center.lng;
+            lat = center.lat;
+
+            // add a marker for each polygon
+            let marker = L.marker([lat, lon], {icon: redIcon})
+                .bindPopup(polygon.title);
+
+            markers.push(marker);
+        }
+        const featureGroup = L.featureGroup(markers).addTo(mapPreviewLocation);
+        // zoom to extend; show all markers but zoomed in as much as possible
+        mapPreviewLocation.fitBounds(featureGroup.getBounds(), {padding: [20, 20]});
+        mapPreviewLocation.invalidateSize();
+        // since all this is part of (animated) bootstrap (PrimeFaces) stuff for the panel this is on
+        // we need to trigger a resize event to get the map to show correctly
+        // When incorrect, just a little manual browser window resizing seems to fix it....
+        // Now to fix it we need to do the invalidateSize  with a delay !    
+        setTimeout(() => {
+            mapPreviewLocation.invalidateSize();
+            mapPreviewLocation.fitBounds(featureGroup.getBounds());
+            // make the bounds a bit wider
+            mapPreviewLocation.fitBounds(featureGroup.getBounds(), {padding: [20, 20]});
+            // window.dispatchEvent(new Event('resize'));
+        }, 300); // slight delay helps with animations/layout shifts
+
+    }
+}
