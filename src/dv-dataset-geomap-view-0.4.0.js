@@ -793,7 +793,10 @@ let dansDvGeoMap = (function() {
     const extractPointsFromDansArchaeologyMetaDataOnPage = (metadataBlockPointName) =>  {
         let dansSpatialPointText = $(`#metadata_${metadataBlockPointName} > td`).text();
         console.log('DansSpatialPoint: ' + dansSpatialPointText);
+        return extractPointsFromDansArchaeologyMetadataText(dansSpatialPointText);
+    };
 
+    const extractPointsFromDansArchaeologyMetadataText = (dansSpatialPointText) =>  {
         const points = []; // point is not a full feature!
 
         // Note that we know there is a newline separation we will use the regexp matchAll
@@ -831,6 +834,10 @@ let dansDvGeoMap = (function() {
         let dansSpatialBoxText = $(`#metadata_${metadataBlockBoxName} > td`).text();
         console.log('DansSpatialBox: ' + dansSpatialBoxText)
 
+        return extractPolygonsFromDansArchaeologyMetadataText(dansSpatialBoxText); 
+    };
+
+    const extractPolygonsFromDansArchaeologyMetadataText = (dansSpatialBoxText) =>  {
         // for DANS arch. we have bounding boxes, but we handle them as polygons
         let polygons = [];
         // To match a number, float or int, with optional decimal point: (-?\d+\.?\d*)\s+
@@ -902,6 +909,7 @@ let dansDvGeoMap = (function() {
     return {
         extractDansArchaeologyFeatures, extractDansDccdFeatures, 
         extractPointsFromDansArchaeologyMetaDataOnPage, extractPolygonsFromDansArchaeologyMetaDataOnPage,
+        extractPointsFromDansArchaeologyMetadataText, extractPolygonsFromDansArchaeologyMetadataText
     };
 })();
 
@@ -915,6 +923,11 @@ function DvDatasetMDGeoMapViewer(options) {
     options = options || {}; // nothing yet
 
     console.log('DvDatasetMDGeoMapViewer');
+
+    DvDatasetMDSummaryGeoMapViewer(); // make it optional later
+
+    // TODO make the maps in the custom block (the rest of the code) also optional
+
 
     // where to get the coordinates and how to extract shoudl be made configuarble
     // inital attemp..
@@ -1157,4 +1170,112 @@ function DvDatasetMDGeoMapViewer(options) {
         }, 300); // slight delay helps with animations/layout shifts
 
     }
+}
+
+function DvDatasetMDSummaryGeoMapViewer() {
+    const summaryMetdata = $("#dataset-summary-metadata");
+    if (summaryMetdata.length > 0) {
+        console.log('DvDatasetMDSummaryGeoMapViewer: dataset-summary-metadata found');
+
+        let points = [];
+        let polygons = [];
+
+        // find points and or boxes
+        const summaryPoints = summaryMetdata.find('#dansSpatialPoint');
+        const summaryBoxes = summaryMetdata.find('#dansSpatialBox');
+        if (summaryPoints.length > 0) {
+            console.log('Summary points found');
+            let dansSpatialPointText = summaryPoints.find("td").text();
+            console.log('Summary DansSpatialPoint: ' + dansSpatialPointText);
+
+            let pointExtractor = dansDvGeoMap.extractPointsFromDansArchaeologyMetadataText;
+            // extract points from the text
+            points.push(...pointExtractor(dansSpatialPointText));
+            console.log('Points extracted: ' + points.length);
+        }       
+        if  (summaryBoxes.length > 0) {
+            console.log('Summary boxes found');
+            let dansSpatialBoxText = summaryBoxes.find("td").text();
+            console.log('Summary DansSpatialBox: ' + dansSpatialBoxText);
+
+            let polygonExtractor = dansDvGeoMap.extractPolygonsFromDansArchaeologyMetadataText;
+            // extract polygons from the text
+            polygons.push(...polygonExtractor(dansSpatialBoxText));
+            console.log('Polygons extracted: ' + polygons.length);
+        }  
+    
+        if  (points.length > 0 || polygons.length > 0) {
+            console.log('Summary points or boxes found, creating map preview');
+            // insert map just after the summary
+            const preview_id_prefix = 'summary_'; // prefix for the map preview id
+            const mapPreview = $('<div id="' + preview_id_prefix + 'mapPreview"></div>');
+            //summaryMetdata.append(mapPreview); // inside the summary metadata, at the end
+            mapPreview.insertBefore('#contentTabs'); // insert before the content tabs, so it is visible
+
+            // Use different color for the marker balloon (icon) 
+            // if we have polygons, which is bounding box in simplest case
+            let redIcon = L.icon({
+                iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+
+            // create a map
+            // use leaflet to show the map
+            let mapDiv = $('<div id="' + preview_id_prefix + 'geomapPreviewLocation" style="height:240px;min-height:240px;border:1px solid;margin-bottom:5px;"></div>');
+            mapPreview.append(mapDiv);
+            // create a leaflet map
+            let mapPreviewLocation = L.map('' + preview_id_prefix + 'geomapPreviewLocation').setView([52.0, 5.0], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+                    '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+                    'Imagery © <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+            }).addTo(mapPreviewLocation);
+            
+            let markers = [];
+            // get each point from points
+            for (let i = 0; i < points.length; i++) {
+                let point = points[i];
+                console.log('Point: ' + point.coordinates);
+                let lat = point.coordinates[0];
+                let lon = point.coordinates[1];
+                // add a marker for each point
+                let marker = L.marker([lat, lon])
+                    .bindPopup(point.title);
+                markers.push(marker);
+            }
+            // get each polygon from polygons
+            for (let i = 0; i < polygons.length; i++) {
+                let polygon = polygons[i];
+                console.log('polygon: ' + polygon.coordinates);
+                // calculate center of the polygon (could be bounding box)
+                // Note that we only use the first polygon, there could be more in the future
+                let p = L.polygon(polygon.coordinates, {color: 'red'}); 
+
+                // add the polygon to the map
+                //p.addTo(mapPreviewLocation);      
+                markers.push(p); // markers name is misleading ,
+                // should be features or we put the polygons in different layer?    
+                // 'red' marker at center
+                let bounds = p.getBounds();
+
+                let center = bounds.getCenter();
+                lon = center.lng;
+                lat = center.lat;   
+                // add a marker for each polygon
+                let marker = L.marker([lat, lon], {icon: redIcon})
+                    .bindPopup(polygon.title);
+                markers.push(marker);
+            }
+
+            const featureGroup = L.featureGroup(markers).addTo(mapPreviewLocation);
+            mapPreviewLocation.fitBounds(featureGroup.getBounds(), {padding: [20, 20]});
+            mapPreviewLocation.invalidateSize();
+        }
+    }
+
 }
