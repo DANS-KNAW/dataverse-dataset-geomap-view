@@ -473,7 +473,7 @@ function DvDatasetGeoMapViewer(options) {
         // More explanantion via tooltip     
         let tooltip = $(`<span>&nbsp;</span><span class="glyphicon glyphicon-question-sign tooltip-icon" data-toggle="tooltip" data-placement="auto top" data-trigger="hover" 
             data-original-title="Geographical map showing locations of Datasets when coordinates have been specified in the metadata. 
-            Multiple points per dataset are possible. Initially only up to the first ${maxSearchRequestsPerPage} datasets in the search results are used. 
+            Multiple locations per dataset are possible. Initially only up to the first ${maxSearchRequestsPerPage} datasets in the search results are used. 
             Using 'More...' the next ${maxSearchRequestsPerPage} will be retrieved. "></span>`);
         controls.append(tooltip);
         tooltip.tooltip();
