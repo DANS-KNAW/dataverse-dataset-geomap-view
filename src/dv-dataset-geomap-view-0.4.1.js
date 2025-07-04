@@ -317,7 +317,7 @@ function DvDatasetGeoMapViewer(options) {
         }
 
         // update result totals retrieval indication
-        $("#" + geomapViewerId + "-result-totals").html(" Retrieved " + numRetrieved + " point location(s)"+ " (total number of datasets: " + result.data.total_count + ")");
+        $("#" + geomapViewerId + "-result-totals").html(" Retrieved " + numRetrieved + " location(s)"+ " (total number of datasets: " + result.data.total_count + ")");
         const t1 = performance.now();
         //console.log(`processSearchResult took ${t1 - t0} milliseconds.`);
     }
@@ -627,7 +627,6 @@ let dansDvGeoMap = (function() {
                     }
                 } // End box(es) handling
             }
-        });
         const t1 = performance.now();
         //console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
         return resultFeatureArr;
