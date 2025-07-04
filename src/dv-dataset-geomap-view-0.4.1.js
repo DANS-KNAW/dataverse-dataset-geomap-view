@@ -627,6 +627,7 @@ let dansDvGeoMap = (function() {
                     }
                 } // End box(es) handling
             }
+        });
         const t1 = performance.now();
         //console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
         return resultFeatureArr;
