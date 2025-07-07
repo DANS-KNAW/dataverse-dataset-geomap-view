@@ -33,10 +33,10 @@ function DvDatasetGeoMapViewer(options) {
     const maxSearchRequestsPerPage = options.maxSearchRequestsPerPage || 100; // default;  The max for the search API is 1000
     // fix useless values
     if (maxSearchRequestsPerPage > 1000) {
-        console.warn('Max search requests per page is too high; setting it to 1000');
+        console.warn('DvDatasetGeoMapViewer: Max search requests per page is too high; setting it to 1000');
         maxSearchRequestsPerPage = 1000;
     } else if (maxSearchRequestsPerPage < 1) {
-        console.warn('Max search requests per page is too low; setting it to 1');
+        console.warn('DvDatasetGeoMapViewer: Max search requests per page is too low; setting it to 1');
         maxSearchRequestsPerPage = 1;
     }
 
@@ -68,14 +68,12 @@ function DvDatasetGeoMapViewer(options) {
 
     // Note that this is not always there on that page, for instance when not on the dataverse search page
     if(viewInsertionBelow === undefined || viewInsertionBelow.length === 0) {
-        console.log('No insertion element found; No map viewer created');
-        return;
+        return; // No insertion element found; No map viewer created
     }
 
     // The list won't have Datasets so no map viewer is created
     if (!hasDatasetType()) {
-        console.log('No dataset as search type; No map viewer created');
-        return;
+        return; // No dataset as search type; No map viewer created
     }
 
     // We could also restrict to certain users when logged in, as Beta tester!
@@ -229,7 +227,7 @@ function DvDatasetGeoMapViewer(options) {
         $.ajax({url: extractionUrl, 
             success: function(result){
                 const t1 = performance.now();
-                console.log(`Result of ajax call took ${t1 - t0} milliseconds.`);
+                //console.log(`Result of ajax call took ${t1 - t0} milliseconds.`);
                 processSearchResult(result);
                 numPagesRetieved++;
                 // determine if more could be retrieved
@@ -252,13 +250,13 @@ function DvDatasetGeoMapViewer(options) {
     function processSearchResult(result) {
         const t0 = performance.now();
         totalNumberOfDatasetsFound = result.data.total_count;
-        console.log('Total of ' + result.data.total_count + " datasets found");
+        //console.log('Total of ' + result.data.total_count + " datasets found");
 
         let extractedFeatures = featureExtractor(result);//extractFeatures(result);
         numRetrieved += extractedFeatures.length; // keep track of the total number of points (features)
         // But also want to know how many datasets have a location
 
-        console.log('Number of features: ' + extractedFeatures.length);
+        //console.log('Number of features: ' + extractedFeatures.length);
 
         const markerList = [];
 
@@ -319,9 +317,9 @@ function DvDatasetGeoMapViewer(options) {
         }
 
         // update result totals retrieval indication
-        $("#" + geomapViewerId + "-result-totals").html(" Retrieved " + numRetrieved + " point location(s)"+ " (total number of datasets: " + result.data.total_count + ")");
+        $("#" + geomapViewerId + "-result-totals").html(" Retrieved " + numRetrieved + " location(s)"+ " (total number of datasets: " + result.data.total_count + ")");
         const t1 = performance.now();
-        console.log(`processSearchResult took ${t1 - t0} milliseconds.`);
+        //console.log(`processSearchResult took ${t1 - t0} milliseconds.`);
     }
 
     function getBaseUrl() {
@@ -337,10 +335,10 @@ function DvDatasetGeoMapViewer(options) {
     function constructSearchApiUrl(baseUrl) {
         let search = window.location.search;
         let params = new URLSearchParams(search);
-        console.log('Page URL: ' + window.location.href + ', Params: ' + params + ' Search: ' + search);
+        //console.log('Page URL: ' + window.location.href + ', Params: ' + params + ' Search: ' + search);
 
         // Extract and reuse any fq (filter queries) params to filter on       
-        // construct new params object for filter queries
+        // construct new params object for filter querieset as search type; No map viewer created    
         let newParams = new URLSearchParams();
         // first just add all fq params, copy action
         params.getAll('fq').forEach(fq => newParams.append('fq', fq));
@@ -390,7 +388,7 @@ function DvDatasetGeoMapViewer(options) {
             apiUrl += '&fq=' + locationCoordinatesFilterquery;
         }
 
-        console.log('Search URL: ' + apiUrl);
+        //console.log('Search URL: ' + apiUrl);
 
         return apiUrl;
     }
@@ -475,7 +473,7 @@ function DvDatasetGeoMapViewer(options) {
         // More explanantion via tooltip     
         let tooltip = $(`<span>&nbsp;</span><span class="glyphicon glyphicon-question-sign tooltip-icon" data-toggle="tooltip" data-placement="auto top" data-trigger="hover" 
             data-original-title="Geographical map showing locations of Datasets when coordinates have been specified in the metadata. 
-            Multiple points per dataset are possible. Initially only up to the first ${maxSearchRequestsPerPage} datasets in the search results are used. 
+            Multiple locations per dataset are possible. Initially only up to the first ${maxSearchRequestsPerPage} datasets in the search results are used. 
             Using 'More...' the next ${maxSearchRequestsPerPage} will be retrieved. "></span>`);
         controls.append(tooltip);
         tooltip.tooltip();
@@ -547,12 +545,12 @@ let dansDvGeoMap = (function() {
                             lat = parseFloat(dansSpatialPointY);
                             lon = parseFloat(dansSpatialPointX);
                         } else {    
-                            console.warn('Spatial point scheme not recognized: ' + dansSpatialPointScheme);
+                            console.warn('dansDvGeoMap.extractDansArchaeologyFeatures: Spatial point scheme not recognized: ' + dansSpatialPointScheme);
                             continue; // skip this point, because we don't know how to convert!
                         }
 
                         if (!isWGS84CoordinateValid(lat, lon) ) {
-                            console.warn('Invalid WGS84 coordinate: ' + lat + ', ' + lon);
+                            console.warn('dansDvGeoMap.extractDansArchaeologyFeatures: Invalid WGS84 coordinate: ' + lat + ', ' + lon);
                             continue; // skip this point, because leaflet map can break on invalid coordinates!
                         }
                  
@@ -581,7 +579,7 @@ let dansDvGeoMap = (function() {
                     for (let i = 0; i < dansSpatialBox.value.length; i++) {
                         if (dansSpatialBox.value[i]["dansSpatialBoxScheme"] === undefined ||
                             dansSpatialBox.value[i]["dansSpatialBoxScheme"].value  === undefined ) {
-                                console.warn('Invalid dansSpatialBox: Missing Scheme for: ' + value.global_id);
+                                console.warn('dansDvGeoMap.extractDansArchaeologyFeatures: Invalid dansSpatialBox: Missing Scheme for: ' + value.global_id);
                             continue;
                         }
                         let dansSpatialBoxScheme = dansSpatialBox.value[i]["dansSpatialBoxScheme"].value;
@@ -590,7 +588,7 @@ let dansDvGeoMap = (function() {
                         dansSpatialBoxEast = dansSpatialBox.value[i]["dansSpatialBoxEast"].value;
                         dansSpatialBoxSouth = dansSpatialBox.value[i]["dansSpatialBoxSouth"].value;
                         dansSpatialBoxWest = dansSpatialBox.value[i]["dansSpatialBoxWest"].value;
-                        console.log('Spatial box: ' + dansSpatialBoxNorth + ', ' + dansSpatialBoxEast + ', ' + dansSpatialBoxSouth + ', ' + dansSpatialBoxWest);
+                        //console.log('Spatial box: ' + dansSpatialBoxNorth + ', ' + dansSpatialBoxEast + ', ' + dansSpatialBoxSouth + ', ' + dansSpatialBoxWest);
                         // calculate lat, lon in WGS84, assuming new RD in m.
 
                         // initialize the feature with the bounding box, WGS8 default
@@ -603,7 +601,7 @@ let dansDvGeoMap = (function() {
                         } else if ( dansSpatialBoxScheme === "longitude/latitude (degrees)") {
                             // Assume WGS84 in decimal degrees, no conversion needed
                         } else {
-                            console.warn('Spatial box scheme not recognized: ' + dansSpatialBoxScheme);
+                            console.warn('dansDvGeoMap.extractDansArchaeologyFeatures: Spatial box scheme not recognized: ' + dansSpatialBoxScheme);
                             continue; // skip this box, because we don't know how to convert!
                         }
                         const feature = {
@@ -624,14 +622,14 @@ let dansDvGeoMap = (function() {
                                 "id": value.global_id
                             }
                         }
-                        // console.log(feature);
+                        
                         resultFeatureArr.push(feature);
                     }
                 } // End box(es) handling
             }
         });
         const t1 = performance.now();
-        console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
+        //console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
         return resultFeatureArr;
     }
 
@@ -735,7 +733,7 @@ let dansDvGeoMap = (function() {
         // console.log('Total of items in this page: ' + result.data.items.length);
 
         $.each(result.data.items, function (key, value) {
-            console.log('Processing item: ' + value.name);
+            //console.log('Processing item: ' + value.name);
             if (typeof value.metadataBlocks !== "undefined" &&
                 typeof value.metadataBlocks.dccd !== "undefined") {
                 let authors   = value.authors.map(x => x).join(", ");
@@ -757,7 +755,7 @@ let dansDvGeoMap = (function() {
                         let lon = parseFloat(dccdSpatialPointX);
 
                         if (!isWGS84CoordinateValid(lat, lon) ) {
-                            console.warn('Invalid WGS84 coordinate: ' + lat + ', ' + lon);
+                            console.warn('dansDvGeoMap.extractDansDccdFeatures: Invalid WGS84 coordinate: ' + lat + ', ' + lon);
                             continue; // skip this point, because leaflet map can break on invalid coordinates!
                         }
 
@@ -779,21 +777,24 @@ let dansDvGeoMap = (function() {
                                 "id": value.global_id
                             }
                         }
-                        // console.log(feature);
+
                         resultFeatureArr.push(feature);
                     }
                 }
             }
         });
         const t1 = performance.now();
-        console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
+        //console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
         return resultFeatureArr;
     };
 
     const extractPointsFromDansArchaeologyMetaDataOnPage = (metadataBlockPointName) =>  {
         let dansSpatialPointText = $(`#metadata_${metadataBlockPointName} > td`).text();
-        console.log('DansSpatialPoint: ' + dansSpatialPointText);
 
+        return extractPointsFromDansArchaeologyMetadataText(dansSpatialPointText);
+    };
+
+    const extractPointsFromDansArchaeologyMetadataText = (dansSpatialPointText) =>  {
         const points = []; // point is not a full feature!
 
         // Note that we know there is a newline separation we will use the regexp matchAll
@@ -801,12 +802,12 @@ let dansDvGeoMap = (function() {
          // To match a number, float or int, with optional decimal point: (-?\d+\.?\d*)\s+
         let dansSpatialPointDegreesMatches = dansSpatialPointText.matchAll(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*) Longitude\/latitude \(degrees\)/g);
         for (const match of dansSpatialPointDegreesMatches) {
-            console.log('Lon/Lat (degrees) coordinates found');
+            // Lon/Lat (degrees) coordinates found
             let lon = match[1];
             let lat = match[2];
-            console.log('Lat: ' + lat + '; Lon: ' + lon);
+            //console.log('Lat: ' + lat + '; Lon: ' + lon);
             if (!isWGS84CoordinateValid(lat, lon) ) {
-                console.warn('Invalid WGS84 coordinate: ' + lat + ', ' + lon);
+                console.warn('dansDvGeoMap.extractPointsFromDansArchaeologyMetadataText: Invalid WGS84 coordinate: ' + lat + ', ' + lon);
                 continue; // skip this point, because leaflet map can break on invalid coordinates!
             }
             points.push({"coordinates":[lat, lon], title: `Lon/Lat (degrees): ${lon}, ${lat}`});
@@ -814,12 +815,12 @@ let dansDvGeoMap = (function() {
         // try matching RD, no negative numbers, some use decimal point
         let dansSpatialPointRDMatches = dansSpatialPointText.matchAll(/(\d+\.?\d*)\s+(\d+\.?\d*) RD \(in m\.\)/g);
         for (const match of dansSpatialPointRDMatches) {
-            console.log('RD (in m.) coordinates found');
+            // RD (in m.) coordinates found
             // convert to lat, lon
             let latLon = convertRDtoWGS84(match[1], match[2]);
-            console.log('Lat: ' + latLon.lat + '; Lon: ' + latLon.lon);
+            //console.log('Lat: ' + latLon.lat + '; Lon: ' + latLon.lon);
             if (!isWGS84CoordinateValid(latLon.lat, latLon.lon) ) {
-                console.warn('Invalid WGS84 coordinate: ' + latLon.lat + ', ' + latLon.lon);
+                console.warn('dansDvGeoMap.extractPointsFromDansArchaeologyMetadataText: Invalid WGS84 coordinate: ' + latLon.lat + ', ' + latLon.lon);
                 continue; // skip this point, because leaflet map can break on invalid coordinates!
             }
             points.push({"coordinates":[latLon.lat, latLon.lon], "title": `RD (in m.): ${match[1]}, ${match[2]}`});
@@ -829,14 +830,17 @@ let dansDvGeoMap = (function() {
 
     const extractPolygonsFromDansArchaeologyMetaDataOnPage = (metadataBlockBoxName) =>  {
         let dansSpatialBoxText = $(`#metadata_${metadataBlockBoxName} > td`).text();
-        console.log('DansSpatialBox: ' + dansSpatialBoxText)
 
+        return extractPolygonsFromDansArchaeologyMetadataText(dansSpatialBoxText); 
+    };
+
+    const extractPolygonsFromDansArchaeologyMetadataText = (dansSpatialBoxText) =>  {
         // for DANS arch. we have bounding boxes, but we handle them as polygons
         let polygons = [];
         // To match a number, float or int, with optional decimal point: (-?\d+\.?\d*)\s+
         let dansSpatialBoxDegreesMatches = dansSpatialBoxText.matchAll(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*) Longitude\/latitude \(degrees\)/g);
         for (const match of dansSpatialBoxDegreesMatches) {
-            console.log('Lon/Lat (degrees) coordinates found');
+            //console.log('Lon/Lat (degrees) coordinates found');
             let dansSpatialBoxNorth = match[1];
             let dansSpatialBoxEast = match[2];
             let dansSpatialBoxSouth = match[3];
@@ -847,11 +851,11 @@ let dansDvGeoMap = (function() {
             var latLon_SW = {lat: parseFloat(dansSpatialBoxSouth), lon: parseFloat(dansSpatialBoxWest)};
 
             if (!isWGS84CoordinateValid(latLon_NE.lat, latLon_NE.lon) ) {
-                console.warn('Invalid WGS84 coordinate: ' + latLon_NE.lat + ', ' + latLon_NE.lon);
+                console.warn('dansDvGeoMap.extractPolygonsFromDansArchaeologyMetadataText: Invalid WGS84 coordinate: ' + latLon_NE.lat + ', ' + latLon_NE.lon);
                 continue; // skip this point, because leaflet map can break on invalid coordinates!
             }
             if (!isWGS84CoordinateValid(latLon_SW.lat, latLon_SW.lon) ) {
-                console.warn('Invalid WGS84 coordinate: ' + latLon_SW.lat + ', ' + latLon_SW.lon);
+                console.warn('dansDvGeoMap.extractPolygonsFromDansArchaeologyMetadataText: Invalid WGS84 coordinate: ' + latLon_SW.lat + ', ' + latLon_SW.lon);
                 continue; // skip this point, because leaflet map can break on invalid coordinates!
             }
             // valid feature
@@ -867,7 +871,7 @@ let dansDvGeoMap = (function() {
         // try matching RD, no negative numbers, some use decimal point
         let dansSpatialBoxRDMatches = dansSpatialBoxText.matchAll(/(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*) RD \(in m\.\)/g);
         for (const match of dansSpatialBoxRDMatches) {
-            console.log('RD (in m.) coordinates found');
+            // RD (in m.) coordinates found
             let dansSpatialBoxNorth = match[1];
             let dansSpatialBoxEast = match[2];
             let dansSpatialBoxSouth = match[3];
@@ -879,11 +883,11 @@ let dansDvGeoMap = (function() {
             latLon_NE = convertRDtoWGS84(latLon_NE.lon, latLon_NE.lat);
             latLon_SW = convertRDtoWGS84(latLon_SW.lon, latLon_SW.lat);
             if (!isWGS84CoordinateValid(latLon_NE.lat, latLon_NE.lon) ) {
-                console.warn('Invalid WGS84 coordinate: ' + latLon_NE.lat + ', ' + latLon_NE.lon);
+                console.warn('dansDvGeoMap.extractPolygonsFromDansArchaeologyMetadataText: Invalid WGS84 coordinate: ' + latLon_NE.lat + ', ' + latLon_NE.lon);
                 continue; // skip this point, because leaflet map can break on invalid coordinates!
             }
             if (!isWGS84CoordinateValid(latLon_SW.lat, latLon_SW.lon) ) {
-                console.warn('Invalid WGS84 coordinate: ' + latLon_SW.lat + ', ' + latLon_SW.lon);
+                console.warn('dansDvGeoMap.extractPolygonsFromDansArchaeologyMetadataText: Invalid WGS84 coordinate: ' + latLon_SW.lat + ', ' + latLon_SW.lon);
                 continue; // skip this point, because leaflet map can break on invalid coordinates!
             }
             // valid feature
@@ -902,6 +906,7 @@ let dansDvGeoMap = (function() {
     return {
         extractDansArchaeologyFeatures, extractDansDccdFeatures, 
         extractPointsFromDansArchaeologyMetaDataOnPage, extractPolygonsFromDansArchaeologyMetaDataOnPage,
+        extractPointsFromDansArchaeologyMetadataText, extractPolygonsFromDansArchaeologyMetadataText
     };
 })();
 
@@ -914,7 +919,9 @@ let dansDvGeoMap = (function() {
 function DvDatasetMDGeoMapViewer(options) {
     options = options || {}; // nothing yet
 
-    console.log('DvDatasetMDGeoMapViewer');
+    DvDatasetMDSummaryGeoMapViewer(); // make it optional later
+
+    // TODO make the maps in the custom block (the rest of the code) also optional
 
     // where to get the coordinates and how to extract shoudl be made configuarble
     // inital attemp..
@@ -933,7 +940,7 @@ function DvDatasetMDGeoMapViewer(options) {
 
     // check if we have what we need
     if (typeof metadatBlockTitle === "undefined") {
-        console.warn('No metadata block title found, cannot create map');
+        console.warn('DvDatasetMDGeoMapViewer: No metadata block title found, cannot create map');
         return;
     }
 
@@ -942,14 +949,14 @@ function DvDatasetMDGeoMapViewer(options) {
         let metadataBlockBoxId = `metadata_${metadataBlockBoxName}`;
         let metadata_spatialBox = $('#' + metadataBlockBoxId);
         if (metadata_spatialBox.length > 0) {
-            console.log('Spatial Box metadata found');
+            // Spatial Box metadata found
 
             let polygons = polygonExtractor(metadataBlockBoxName);
 
             // bounding boxes in their own map
             // check if we have polygons
             if (polygons.length > 0) {
-                console.log('Polygons: ' + polygons);
+                //console.log('Polygons: ' + polygons);
                 // detect tab selection for datasetForm:tabView
                 $('#datasetForm').on('click', function(event) {
                     // match 'Temporal and Spatial Coverage'  with regex
@@ -960,18 +967,18 @@ function DvDatasetMDGeoMapViewer(options) {
                     let matchTitle = event.target.textContent.match(new RegExp(`\\s*${metadatBlockTitle}\\s*`));
 
                     if (matchTitle !== null) {
-                        console.log(`Clicked ${metadatBlockTitle}`);
+                        //console.log(`Clicked ${metadatBlockTitle}`);
                         createMapPreviewBoxes('#' + metadataBlockBoxId, polygons);
                         // if (mapPreviewLocation !== undefined && mapPreviewLocation !== null) {
                         // could do some stuff here
                     }
                 });
             } else {
-                console.log(`No polygons found in ${metadataBlockBoxName}`);
+                //console.log(`No polygons found in ${metadataBlockBoxName}`);
             }
         }
     } else {
-        console.log(`No metadata block for bounding boxes configured`);
+        //console.log(`No metadata block for bounding boxes configured`);
     }
 
     if (typeof metadataBlockPointName !== "undefined") {
@@ -979,29 +986,29 @@ function DvDatasetMDGeoMapViewer(options) {
         let metadataBlockPointId = `metadata_${metadataBlockPointName}`;
         let metadata_spatialPoint = $('#' + metadataBlockPointId);
         if (metadata_spatialPoint.length > 0) {
-            console.log('Spatial Point metadata found');
+            // Spatial Point metadata found
             
             let points = pointExtractor(metadataBlockPointName);
             
             if (points.length > 0 ) {
-                console.log('Points: ' + points);
+                //console.log('Points: ' + points);
 
                 // detect tab selection for datasetForm:tabView
                 $('#datasetForm').on('click', function(event) {
                     let matchTitle = event.target.textContent.match(new RegExp(`\\s*${metadatBlockTitle}\\s*`));
                     if (matchTitle !== null) {
-                        console.log(`Clicked ${metadatBlockTitle}`);
+                        //console.log(`Clicked ${metadatBlockTitle}`);
                         mapPreviewLocation = createMapPreviewPoints('#' + metadataBlockPointId, points);
                         // if (mapPreviewLocation !== undefined && mapPreviewLocation !== null) {
                         // could do some stuff here
                     }
                 });
             } else {
-                console.log(`No points found in ${metadataBlockPointName}`);
+                //console.log(`No points found in ${metadataBlockPointName}`);
             }
         }
     } else {  
-        console.log(`No metadata block for points configured`);
+        //console.log(`No metadata block for points configured`);
     }
 
     /* Functions */
@@ -1012,11 +1019,11 @@ function DvDatasetMDGeoMapViewer(options) {
         //$(id).find('#mapPreview').remove(); // then with every click we remove adn reset the map preview
         // If I just return when it is there
         if ($(id).find('#' + preview_id_prefix + 'mapPreview').length > 0 ) {
-            console.log('Map preview already exists');
-            return null; // return  if found, nothing to do
+            // Map preview already exists
+            return null; // return if found, nothing to do
         }
 
-        // create a map preview
+        // create a map previewconsole.log('
         let mapPreview = $('<div id="' + preview_id_prefix + 'mapPreview"></div>');
         $(id).append(mapPreview);
 
@@ -1044,7 +1051,7 @@ function DvDatasetMDGeoMapViewer(options) {
         // get each point from points
         for (let i = 0; i < points.length; i++) {
             let point = points[i];
-            console.log('Point: ' + point.coordinates);
+            //console.log('Point: ' + point.coordinates);
             let lat = point.coordinates[0];
             let lon = point.coordinates[1];
             // add a marker for each point
@@ -1074,8 +1081,8 @@ function DvDatasetMDGeoMapViewer(options) {
         //$(id).find('#mapPreview').remove(); // then with every click we remove adn reset the map preview
         // If I just return when it is there
         if ($(id).find('#' + preview_id_prefix + 'mapPreview').length > 0 ) {
-            console.log('Map preview already exists');
-            return null; // return  if found, nothing to do
+            // Map preview already exists
+            return  null; // return if found, nothing to do
         }
 
         // create a map preview
@@ -1117,7 +1124,7 @@ function DvDatasetMDGeoMapViewer(options) {
         // get each point from points
         for (let i = 0; i < polygons.length; i++) {
             let polygon = polygons[i];
-            console.log('polygon: ' + polygon.coordinates);
+            //console.log('polygon: ' + polygon.coordinates);
 
             // calculate center of the polygon (could be bounding box)
             // Note that we only use the first polygon, there could be more in the future
@@ -1157,4 +1164,119 @@ function DvDatasetMDGeoMapViewer(options) {
         }, 300); // slight delay helps with animations/layout shifts
 
     }
+}
+
+/**
+ * Dans Archaeology Metadata GeoMap Viewer for the summary metadata section
+ * Note that to get coordinates into that summary section 
+ * Dataverse must be configured to do so via the :CustomDatasetSummaryFields setting
+ * 
+ * When coordinates are found, the map preview is created showing the points and/or polygons
+ */
+function DvDatasetMDSummaryGeoMapViewer() {
+    const summaryMetdata = $("#dataset-summary-metadata");
+    if (summaryMetdata.length > 0) {
+        // Dataset summary metadata section found
+
+        let points = [];
+        let polygons = [];
+
+        // find points and or boxes
+        const summaryPoints = summaryMetdata.find('#dansSpatialPoint');
+        const summaryBoxes = summaryMetdata.find('#dansSpatialBox');
+        if (summaryPoints.length > 0) {
+            // Summary points found
+            let dansSpatialPointText = summaryPoints.find("td").text();
+            //console.log('Summary DansSpatialPoint: ' + dansSpatialPointText);
+
+            let pointExtractor = dansDvGeoMap.extractPointsFromDansArchaeologyMetadataText;
+            // extract points from the text
+            points.push(...pointExtractor(dansSpatialPointText));
+            //console.log('Points extracted: ' + points.length);
+        }       
+        if  (summaryBoxes.length > 0) {
+            // Summary boxes found
+            let dansSpatialBoxText = summaryBoxes.find("td").text();
+            //console.log('Summary DansSpatialBox: ' + dansSpatialBoxText);
+
+            let polygonExtractor = dansDvGeoMap.extractPolygonsFromDansArchaeologyMetadataText;
+            // extract polygons from the text
+            polygons.push(...polygonExtractor(dansSpatialBoxText));
+            //console.log('Polygons extracted: ' + polygons.length);
+        }  
+    
+        if  (points.length > 0 || polygons.length > 0) {
+            // Summary points or boxes found, creating map preview
+            // insert map just after the summary
+            const preview_id_prefix = 'summary_'; // prefix for the map preview id
+            const mapPreview = $('<div id="' + preview_id_prefix + 'mapPreview"></div>');
+            //summaryMetdata.append(mapPreview); // inside the summary metadata, at the end
+            mapPreview.insertBefore('#contentTabs'); // insert before the content tabs, so it is visible
+
+            // Use different color for the marker balloon (icon) 
+            // if we have polygons, which is bounding box in simplest case
+            let redIcon = L.icon({
+                iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+
+            // create a map
+            // use leaflet to show the map
+            let mapDiv = $('<div id="' + preview_id_prefix + 'geomapPreviewLocation" style="height:240px;min-height:240px;border:1px solid;margin-bottom:5px;"></div>');
+            mapPreview.append(mapDiv);
+            // create a leaflet map
+            let mapPreviewLocation = L.map('' + preview_id_prefix + 'geomapPreviewLocation').setView([52.0, 5.0], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+                    '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+                    'Imagery © <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+            }).addTo(mapPreviewLocation);
+            
+            let markers = [];
+            // get each point from points
+            for (let i = 0; i < points.length; i++) {
+                let point = points[i];
+                //console.log('Point: ' + point.coordinates);
+                let lat = point.coordinates[0];
+                let lon = point.coordinates[1];
+                // add a marker for each point
+                let marker = L.marker([lat, lon])
+                    .bindPopup(point.title);
+                markers.push(marker);
+            }
+            // get each polygon from polygons
+            for (let i = 0; i < polygons.length; i++) {
+                let polygon = polygons[i];
+                //console.log('polygon: ' + polygon.coordinates);
+                // calculate center of the polygon (could be bounding box)
+                // Note that we only use the first polygon, there could be more in the future
+                let p = L.polygon(polygon.coordinates, {color: 'red'}); 
+
+                // add the polygon to the map
+                //p.addTo(mapPreviewLocation);      
+                markers.push(p); // markers name is misleading ,
+                // should be features or we put the polygons in different layer?    
+                // 'red' marker at center
+                let bounds = p.getBounds();
+
+                let center = bounds.getCenter();
+                lon = center.lng;
+                lat = center.lat;   
+                // add a marker for each polygon
+                let marker = L.marker([lat, lon], {icon: redIcon})
+                    .bindPopup(polygon.title);
+                markers.push(marker);
+            }
+
+            const featureGroup = L.featureGroup(markers).addTo(mapPreviewLocation);
+            mapPreviewLocation.fitBounds(featureGroup.getBounds(), {padding: [20, 20]});
+            mapPreviewLocation.invalidateSize();
+        }
+    }
+
 }
