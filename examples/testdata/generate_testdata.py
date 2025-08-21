@@ -9,18 +9,6 @@ import argparse
 import jinja2
 import requests
 
-# Create a session with your desired settings
-session = requests.Session()
-session.verify = False  # or set your custom cert
-
-# Monkey-patch requests' top-level methods to use the session
-requests.get = session.get
-requests.post = session.post
-requests.put = session.put
-requests.delete = session.delete
-requests.head = session.head
-requests.patch = session.patch
-
 # jinja2 template for the test point_data
 test_template = '''\
 some point point_data for the experiments with the following properties:  
@@ -84,11 +72,24 @@ if __name__ == '__main__':
     parser.add_argument('-url', type=str, default='https://dev.archaeology.datastations.nl', help='Server URL')
     parser.add_argument('-n', type=int, default=1, help='Number of datasets')
     parser.add_argument('-a', type=str, help='API token', required=True)
+    parser.add_argument('-i', help='ignore self signed certificate', action='store_false')
     # output is not used now
     parser.add_argument('--output', type=str, default='testdata_pids.txt', help='Output file')
     args = parser.parse_args()
     #print(args)
-    
+
+    # Create a session with your desired settings
+    session = requests.Session()
+    session.verify = args.i  # ignore self-signed certificates if specified
+
+    # Monkey-patch requests' top-level methods to use the session
+    requests.get = session.get
+    requests.post = session.post
+    requests.put = session.put
+    requests.delete = session.delete
+    requests.head = session.head
+    requests.patch = session.patch
+
     # TODO: parse from command line
     parent = 'root'
     server_url = args.url
