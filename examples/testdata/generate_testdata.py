@@ -9,6 +9,18 @@ import argparse
 import jinja2
 import requests
 
+# Create a session with your desired settings
+session = requests.Session()
+session.verify = False  # or set your custom cert
+
+# Monkey-patch requests' top-level methods to use the session
+requests.get = session.get
+requests.post = session.post
+requests.put = session.put
+requests.delete = session.delete
+requests.head = session.head
+requests.patch = session.patch
+
 # jinja2 template for the test point_data
 test_template = '''\
 some point point_data for the experiments with the following properties:  
@@ -50,9 +62,8 @@ def publish_dataset(api_token, server_url, pid):
 
 
 # Generate test point_data; for the Archaeology Datastation in RD Coordinates
-def generate_point_data(n):
+def generate_point_data(n,d):
     # generate point_data, random uniform distribution on [0, 1]
-    d = 2 # fixed to 2D points
     point_data = np.random.rand(n, d)
     # scale and shift point_data to match (almost) valid RD coordinates
     # https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten
@@ -84,7 +95,6 @@ if __name__ == '__main__':
     api_token = args.a 
     n = args.n
     output = args.output
-    point_data = generate_point_data(n)
 
 
     id = str(uuid.uuid4())
@@ -99,9 +109,13 @@ if __name__ == '__main__':
          template = jinja2.Template(f.read())
 
     for i in range(n):
-        title = 'Test dataset ' + str(i) + ' ' + id
-        keyword = 'maptest ' + timestamp
-        content = template.render(title=title, keyword=keyword, point=point_data[i])
+        nr_of_points = np.random.randint(0, 4)
+        nr_of_boxes = np.random.randint(1 if nr_of_points == 0 else 0, 3)
+        content = template.render(title=f'Test dataset {str(i)}  with {nr_of_points} point{"" if nr_of_points == 1 else "s"} and {nr_of_boxes} box{"" if nr_of_boxes == 1 else "es"} {id}',
+                                  keyword=f'maptest {timestamp}',
+                                  points=generate_point_data(nr_of_points, 2),  # generate points with 2 dimensions
+                                  boxes=generate_point_data(nr_of_boxes, 4))
+        # print(content)
         #with open('experiments/testdata/'+ 'dataset_json_'+str(i)+'.json', 'w') as f:
         #    f.write(content)
         result = create_dataset(api_token, server_url, parent, content)
