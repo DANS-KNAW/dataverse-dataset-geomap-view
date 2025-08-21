@@ -56,11 +56,17 @@ def generate_point_data(n,d):
     # scale and shift point_data to match (almost) valid RD coordinates
     # https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten
     # " de x-coördinaat tussen 0 en 280 km ligt en de y-coördinaat tussen 300 en 625 km."
-    # X
+    # X / EAST
     point_data[:, 0] *= 280000
-    # Y
+    # Y / NORTH
     point_data[:, 1] *= 325000
     point_data[:, 1] += 300000
+    if d == 4:
+        # WEST
+        point_data[:, 2] *= 280000
+        # SOUTH
+        point_data[:, 3] *= 325000
+        point_data[:, 3] += 300000
     # floor to integer (meters in RD coordinates)
     point_data = np.floor(point_data)
     return point_data
