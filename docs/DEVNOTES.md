@@ -45,15 +45,11 @@ When editing the js file, you need two copy actions:
 
 ## Possible functional improvements:
 
-- Extract and display locations from more than 1000 datasets. Current limit comes from the search API call, getting more results has to be done with more API requests.  Allow to retrieve more via an extra GUI control with progress bar. 
-
-- Also display bounding boxes(rectangles), especially when a dateset only has those, we now do not see the dataset on the map. The way that this is displayed (with different color markers) can be done similar to how the Ariadne portal is doing it. 
-
 - Make the script more general usable; for others that have geographical coordinates in their custom metadata. 
 
 - Enhancing the appearance of the marker popup with thumbnail or icon similar to what is done on the result listing. 
 
-- Allow selection of alternative base maps, like a satellite image. 
+- Allow selection of more alternative base maps, like the satellite image. 
 
 - Allow downloading the geographical information on the map in GeoJSON format.
 
