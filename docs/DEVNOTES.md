@@ -25,9 +25,9 @@ With tabs it does the following:
 ## Intructions for DANS developers
 
 Using the development setup we have at DANS for our Archaeology Datastation, with vagrant and VirtualBox VM's. 
-However this code/html fragment could be inserted into the custom footer file of the `test` or `demo` servers of `archaeology.datastations.nl`. 
+However, this code/html fragment could be inserted into the custom footer file of the `test` or `demo` servers of `archaeology.datastations.nl`. 
 
-The example[custom footer file](../examples/custom-footer.html) is in this repo. 
+The example [custom footer file](../examples/custom-footer.html) is in this repo. 
 
 Steps for developers with access to on the `dans-core-systems` repo:
 1. Get into the repo directory (assuming you have everything in place for the standard development). 
