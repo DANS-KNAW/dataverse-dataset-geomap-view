@@ -4,6 +4,9 @@ Developer notes
 The JavaScript code is based on the functionality of Dataverse version 6.2+, and is uses the jQuery and the Leaflet geographical map library. 
 When the `DvDatasetGeoMapViewer` function is called, from a script tag in the custom footer, the default 'list' display is accompanied (via a 'Map' tab) on geographical map showing the datasets with locations as markers. 
 
+Besides showing maps for the search results, there are also maps in the Dataset (view) page when coordinates are specified. 
+Smaller maps will appear next to the points and or boundingboxes coordinates of the custom metadata block. There will also be a larger (wider) map just above the tabs, showing both points and boundingboxes. 
+
 ## Short description of the solution: 
 
 The script in that custom footer is kicking in with a search results page load (default the homepage shows the top 10 in a list). 
@@ -22,7 +25,7 @@ With tabs it does the following:
  - The tab selection is stored so when the page is reloaded, because of a search change, the map stays selected if it was or the list stays selected. 
 
 
-## Intructions for DANS developers
+## Instructions for DANS developers
 
 Using the development setup we have at DANS for our Archaeology Datastation, with vagrant and VirtualBox VM's. 
 However this code/html fragment could be inserted into the custom footer file of the `test` or `demo` servers of `archaeology.datastations.nl`. 
@@ -43,11 +46,15 @@ When editing the js file, you need two copy actions:
 - firsts into that `shared` dir (unless you clone the repo in there).
 - next on the vagrant box into that `/var/www/html/custom/geomapview` folder. 
 
+## Deployment 
+
+While developing, we have caching disabled in the browser, but when deploying on a server we do want to use versions numbers in the filename to force the browser to use the new version. We should add that file to the GitHub release 'assets' for convenience. 
+Use the same version as the release tag!
+At some point we could have a 'build' step that uses the version to rename the output file. It could even do some JS minifying if we used a build tool for that. 
+
 ## Possible functional improvements:
 
 - Extract and display locations from more than 1000 datasets. Current limit comes from the search API call, getting more results has to be done with more API requests.  Allow to retrieve more via an extra GUI control with progress bar. 
-
-- Also display bounding boxes(rectangles), especially when a dateset only has those, we now do not see the dataset on the map. The way that this is displayed (with different color markers) can be done similar to how the Ariadne portal is doing it. 
 
 - Make the script more general usable; for others that have geographical coordinates in their custom metadata. 
 
