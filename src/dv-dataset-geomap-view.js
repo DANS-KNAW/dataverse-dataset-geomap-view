@@ -82,6 +82,7 @@ function DvDatasetGeoMapViewer(options) {
 
 
     // --- Tab selection for list or map view
+    let initialSearchRequestDone = false; // Flag to track if initial search request has been done
 
     let tabSelection = createTabSelection();
     tabSelection.insertBefore(viewInsertionBelow);
@@ -130,6 +131,11 @@ function DvDatasetGeoMapViewer(options) {
             $(".results-sort-pagination.results-bottom").hide();
             // hide element while keeping layout
             $("#resultsCountPaginatorBlock .results-count").css('visibility', 'hidden');
+            // reduce search requests, only do them is the map is viewed
+            if (!initialSearchRequestDone) {
+                doSearchRequest(searchApiUrl);
+                initialSearchRequestDone = true;
+            }
         } else {
             $('#' + geomapViewerId).hide();
             $("#resultsTable").show();
@@ -214,7 +220,7 @@ function DvDatasetGeoMapViewer(options) {
     let pageSize = maxSearchRequestsPerPage;
     let numRetrieved = 0;
     let searchApiUrl = constructSearchApiUrl(baseUrl)
-    doSearchRequest(searchApiUrl);
+    // Note; don't call doSearchRequest(searchApiUrl) here, instead do this when the map is displayed for the first time
 
     updateTabsView(); // Must have everything initialized before this is called
 
