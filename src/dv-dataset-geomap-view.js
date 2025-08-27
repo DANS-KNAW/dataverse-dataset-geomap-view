@@ -911,35 +911,42 @@ let dansDvGeoMap = (function() {
 })();
 
 /**
- * Maps for the Dataset Metadata Page,
+ * Maps for the Dataset Page (view metadata)
+ * Adds a map just below the metadata summary section, above the tabs
  * Adds maps in the metadata block with coordinates, for points boxes or both
  * 
  * @param {} options 
  */
 function DvDatasetMDGeoMapViewer(options) {
     options = options || {}; // nothing yet
+   // TODO make the maps optional
 
-    DvDatasetMDSummaryGeoMapViewer(); // make it optional later
-
-    // TODO make the maps in the custom block (the rest of the code) also optional
-
-    // where to get the coordinates and how to extract shoudl be made configuarble
-    // inital attemp..
-    
     // --- Archaeology (Dataverse archive) specific settings
     //let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
-    // first the title of the metadat block that contains the coordinates, 
+    // first the title of the metadata block that contains the coordinates, 
     // need this to find the metadata
-    let metadatBlockTitle = 'Temporal and Spatial Coverage';
+    // where to get the coordinates and how to extract should be made configurable
+    let metadataBlockTitle = 'Temporal and Spatial Coverage';
     let metadataBlockBoxName = 'dansSpatialBox';
-    let metadataBlockPointName = 'dansSpatialPoint'; 
+    let metadataBlockPointName = 'dansSpatialPoint';
+
+    DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBoxName);
+    DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPointName, metadataBlockBoxName);
+}
+
+/**
+ * Dans Archaeology Metadata GeoMap Viewer for the metadata block section (on metadata tab)
+ * When coordinates are found, the map previews are created showing the points and/or polygons in separate maps
+ */
+function DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPointName, metadataBlockBoxName) {
+
     // note that sometimes we have only box or only point. 
     let polygonExtractor = dansDvGeoMap.extractPolygonsFromDansArchaeologyMetaDataOnPage;
     let pointExtractor = dansDvGeoMap.extractPointsFromDansArchaeologyMetaDataOnPage;
 
 
     // check if we have what we need
-    if (typeof metadatBlockTitle === "undefined") {
+    if (typeof metadataBlockTitle === "undefined") {
         console.warn('DvDatasetMDGeoMapViewer: No metadata block title found, cannot create map');
         return;
     }
@@ -964,10 +971,10 @@ function DvDatasetMDGeoMapViewer(options) {
                     // could try to narrow it down, luckily we chEck for existence of the metadata_dansSpatialPoint
                     // in that createMapPreview function
                     //let matchTitle = event.target.textContent.match(/\s*Temporal and Spatial Coverage\s*/);
-                    let matchTitle = event.target.textContent.match(new RegExp(`\\s*${metadatBlockTitle}\\s*`));
+                    let matchTitle = event.target.textContent.match(new RegExp(`\\s*${metadataBlockTitle}\\s*`));
 
                     if (matchTitle !== null) {
-                        //console.log(`Clicked ${metadatBlockTitle}`);
+                        //console.log(`Clicked ${metadataBlockTitle}`);
                         createMapPreviewBoxes('#' + metadataBlockBoxId, polygons);
                         // if (mapPreviewLocation !== undefined && mapPreviewLocation !== null) {
                         // could do some stuff here
@@ -995,7 +1002,7 @@ function DvDatasetMDGeoMapViewer(options) {
 
                 // detect tab selection for datasetForm:tabView
                 $('#datasetForm').on('click', function(event) {
-                    let matchTitle = event.target.textContent.match(new RegExp(`\\s*${metadatBlockTitle}\\s*`));
+                    let matchTitle = event.target.textContent.match(new RegExp(`\\s*${metadataBlockTitle}\\s*`));
                     if (matchTitle !== null) {
                         //console.log(`Clicked ${metadatBlockTitle}`);
                         mapPreviewLocation = createMapPreviewPoints('#' + metadataBlockPointId, points);
@@ -1167,14 +1174,11 @@ function DvDatasetMDGeoMapViewer(options) {
 }
 
 /**
- * Dans Archaeology Metadata GeoMap Viewer for the summary metadata section
- * Note that to get coordinates into that summary section 
- * Dataverse must be configured to do so via the :CustomDatasetSummaryFields setting
- * 
+ * Dans Archaeology Metadata GeoMap Viewer for the summary metadata section (just below it)
  * When coordinates are found, the map preview is created showing the points and/or polygons
  */
-function DvDatasetMDSummaryGeoMapViewer() {
-    const summaryMetdata = $("#dataset-summary-metadata");
+function DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBoxName) {
+    const summaryMetdata = $("#contentTabs");
     if (summaryMetdata.length > 0) {
         // Dataset summary metadata section found
 
@@ -1182,8 +1186,8 @@ function DvDatasetMDSummaryGeoMapViewer() {
         let polygons = [];
 
         // find points and or boxes
-        const summaryPoints = summaryMetdata.find('#dansSpatialPoint');
-        const summaryBoxes = summaryMetdata.find('#dansSpatialBox');
+        const summaryPoints = summaryMetdata.find('#' + `metadata_${metadataBlockPointName}`);
+        const summaryBoxes = summaryMetdata.find('#' + `metadata_${metadataBlockBoxName}`);
         if (summaryPoints.length > 0) {
             // Summary points found
             let dansSpatialPointText = summaryPoints.find("td").text();
