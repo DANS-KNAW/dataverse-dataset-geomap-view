@@ -192,6 +192,7 @@
             "multiple": true,
             "typeClass": "compound",
             "value": [
+            {% for point in points %}
               {
                 "dansSpatialPointX": {
                   "typeName": "dansSpatialPointX",
@@ -211,7 +212,47 @@
                   "typeClass": "controlledVocabulary",
                   "value": "RD (in m.)"
                 }
-              }
+             }{% if not loop.last %},{% endif %}{% endfor %}
+            ]
+          },
+          {
+            "typeName": "dansSpatialBox",
+            "multiple": true,
+            "typeClass": "compound",
+            "value": [
+              {% for box in boxes %}
+              {
+                "dansSpatialBoxNorth": {
+                  "typeName": "dansSpatialBoxNorth",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "{{ box[1]|int}}"
+                },
+                "dansSpatialBoxEast": {
+                  "typeName": "dansSpatialBoxEast",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "{{ box[0]|int}}"
+                },
+                "dansSpatialBoxSouth": {
+                  "typeName": "dansSpatialBoxSouth",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "{{ box[3]|int}}"
+                },
+                "dansSpatialBoxWest": {
+                  "typeName": "dansSpatialBoxWest",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "{{ box[2]|int}}"
+                },
+                "dansSpatialBoxScheme": {
+                  "typeName": "dansSpatialBoxScheme",
+                  "multiple": false,
+                  "typeClass": "controlledVocabulary",
+                  "value": "RD (in m.)"
+                }
+              }{% if not loop.last %},{% endif %}{% endfor %}
             ]
           }
         ]
