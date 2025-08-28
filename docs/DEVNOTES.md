@@ -60,7 +60,7 @@ At some point we could have a 'build' step that uses the version to rename the o
 
 - Enhancing the appearance of the marker popup with thumbnail or icon similar to what is done on the result listing. 
 
-- Allow selection of alternative base maps, like a satellite image. 
+- Allow selection of alternative base maps, like a satellite image on the map displayed on the Dataset page. 
 
 - Allow downloading the geographical information on the map in GeoJSON format.
 
