@@ -13,16 +13,26 @@
 function DvDatasetGeoMapViewer(options) {
     options = options || {};
 
+    verses_to_restrict_to = ['dccd', 'stichtingring']; // need to supply subverses here
+    if (!isAllowedToViewMap(verses_to_restrict_to)) {
+        return; // not on a dataverse search page where we want to show the map viewer
+    }
+
     // --- Archaeology (Dataverse archive) specific settings
-    let subtree = 'root'; // Note that Dataverse can be configured to have another 'root' verse alias
-    let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
-    let featureExtractor = dansDvGeoMap.extractDansArchaeologyFeatures; // specific feature extractor for archaeology
+//    let subtree = 'root'; // Note that Dataverse can be configured to have another 'root' verse alias
+//    let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
+//    let featureExtractor = dansDvGeoMap.extractDansArchaeologyFeatures; // specific feature extractor for archaeology
+    // DCCD on DVNL
+    let subtree = 'dccd'; // subtree for DCCD on DVNL
+    let metadataBlockName = 'dccd'; // specific metadata block for dccd containing location coordinates
+    let featureExtractor = dansDvGeoMap.extractDansDccdFeatures; // specific feature extractor for dccd
 
     // filter query to get only datasets with location coordinates, other datasets we cant use for displaying on a map
     // Note that the filter query is specific for the metadata block
     // "dansSpatialBoxNorth:[* TO *]" for the boxes  
     // "dansSpatialPointX:[* TO *]" for the points
-    let locationCoordinatesFilterquery = encodeURI("dansSpatialPointX:[* TO *] OR dansSpatialBoxNorth:[* TO *]");
+//    let locationCoordinatesFilterquery = encodeURI("dansSpatialPointX:[* TO *] OR dansSpatialBoxNorth:[* TO *]");
+    let locationCoordinatesFilterquery = encodeURI("dccd-latitude:[* TO *]");
 
     let alternativeBaseUrl; // optionally use an alternative base url instead of the one of the current web page
     if (options.alternativeBaseUrl) {
@@ -111,6 +121,27 @@ function DvDatasetGeoMapViewer(options) {
     }, function(){
         $(this).removeClass("ui-state-hover");
     });
+
+    // detect if we are on a dataverse search page that is allowed to show the map viewer
+    function isAllowedToViewMap(verses_to_restrict_to) {
+        // if the list is empty, there is no restriction
+        if (!verses_to_restrict_to || verses_to_restrict_to.length === 0) {
+            return true;
+        }
+        // otherwise the url must end in dataverse/{verse}
+        let path = window.location.pathname;
+        for (let verse of verses_to_restrict_to) {
+            if (path.endsWith('/dataverse/' + verse)) {
+                // we are on a dataverse search page where we want to show the map viewer
+                return true
+            }
+        }
+        return false; // not on a dataverse search page where we want to show the map viewer
+
+        // note that we might do something that does not need the caller to pass all the subverses,
+        // instead we could inspect that breadcrumb trail on the page!
+        // a link in that #breadcrumbNavBlock
+    }
 
     /*
      * Update the view based on the selected tab
