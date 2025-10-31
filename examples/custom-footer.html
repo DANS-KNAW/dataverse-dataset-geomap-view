@@ -95,11 +95,8 @@
 <script>
 // Assume we have jQuery, because its is in the footer of the Dataverse application
 $().ready(function() {
-    DvDatasetGeoMapViewer({
-        maxSearchRequestsPerPage:100,
-        allowOtherBaseMaps: true,
-        allowRetrievingMore: true,
-    });
+    // for DANS use either archaeology or dccd options
+    DvDatasetGeoMapViewer(dansDvGeoMap.dansDvViewerOptions.dccd);
     DvDatasetMDGeoMapViewer();
 });
 </script>

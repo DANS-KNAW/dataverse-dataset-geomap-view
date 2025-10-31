@@ -13,7 +13,12 @@
 function DvDatasetGeoMapViewer(options) {
     options = options || {};
 
-    verses_to_restrict_to = ['dccd', 'stichtingring']; // need to supply subverses here
+    let verses_to_restrict_to = []; // just allow all by default
+    if (options.verses_to_restrict_to) {
+        verses_to_restrict_to = options.verses_to_restrict_to;
+    }
+
+    // first check if we need to continue
     if (!isAllowedToViewMap(verses_to_restrict_to)) {
         return; // not on a dataverse search page where we want to show the map viewer
     }
@@ -23,16 +28,23 @@ function DvDatasetGeoMapViewer(options) {
 //    let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
 //    let featureExtractor = dansDvGeoMap.extractDansArchaeologyFeatures; // specific feature extractor for archaeology
     // DCCD on DVNL
-    let subtree = 'dccd'; // subtree for DCCD on DVNL
-    let metadataBlockName = 'dccd'; // specific metadata block for dccd containing location coordinates
-    let featureExtractor = dansDvGeoMap.extractDansDccdFeatures; // specific feature extractor for dccd
+//    let subtree = 'dccd'; // subtree for DCCD on DVNL
+//    let metadataBlockName = 'dccd'; // specific metadata block for dccd containing location coordinates
+//    let featureExtractor = dansDvGeoMap.extractDansDccdFeatures; // specific feature extractor for dccd
+
+    // apply options, make Archaeology the default for NOW!
+    let subtree = options.subtree || 'root'; // Note that Dataverse can be configured to have another 'root' verse alias
+    let metadataBlockName = options.metadataBlockName || 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
+    let featureExtractor = options.featureExtractor || dansDvGeoMap.extractDansArchaeologyFeatures; // specific feature extractor for archaeology
+
 
     // filter query to get only datasets with location coordinates, other datasets we cant use for displaying on a map
     // Note that the filter query is specific for the metadata block
     // "dansSpatialBoxNorth:[* TO *]" for the boxes  
     // "dansSpatialPointX:[* TO *]" for the points
 //    let locationCoordinatesFilterquery = encodeURI("dansSpatialPointX:[* TO *] OR dansSpatialBoxNorth:[* TO *]");
-    let locationCoordinatesFilterquery = encodeURI("dccd-latitude:[* TO *]");
+//    let locationCoordinatesFilterquery = encodeURI("dccd-latitude:[* TO *]");
+    let locationCoordinatesFilterquery = options.locationCoordinatesFilterquery || encodeURI("dansSpatialPointX:[* TO *] OR dansSpatialBoxNorth:[* TO *]");
 
     let alternativeBaseUrl; // optionally use an alternative base url instead of the one of the current web page
     if (options.alternativeBaseUrl) {
@@ -940,10 +952,36 @@ let dansDvGeoMap = (function() {
         return polygons;
     };
 
+        const dansDvViewerOptions = {
+        
+            dccd: {
+                maxSearchRequestsPerPage: 100,
+                allowOtherBaseMaps: true,
+                allowRetrievingMore: true,
+                // DCCD on DVNL specific settings
+                verses_to_restrict_to: ['dccd', 'stichtingring'],
+                subtree: 'dccd',
+                metadataBlockName: 'dccd',
+                locationCoordinatesFilterquery: encodeURI("dccd-latitude:[* TO *]"),
+                featureExtractor: extractDansDccdFeatures
+            },
+            archaeology: {
+                maxSearchRequestsPerPage: 100,
+                allowOtherBaseMaps: true,
+                allowRetrievingMore: true,
+                // Archaeology specific settings
+                subtree: 'root', // toplevel verse with the metadata block enabled
+                metadataBlockName: 'dansTemporalSpatial',
+                locationCoordinatesFilterquery: encodeURI("dansSpatialPointX:[* TO *] OR dansSpatialBoxNorth:[* TO *]"),
+                featureExtractor: extractDansArchaeologyFeatures
+            }
+    };
+
     return {
         extractDansArchaeologyFeatures, extractDansDccdFeatures, 
         extractPointsFromDansArchaeologyMetaDataOnPage, extractPolygonsFromDansArchaeologyMetaDataOnPage,
-        extractPointsFromDansArchaeologyMetadataText, extractPolygonsFromDansArchaeologyMetadataText
+        extractPointsFromDansArchaeologyMetadataText, extractPolygonsFromDansArchaeologyMetadataText,
+        dansDvViewerOptions
     };
 })();
 
