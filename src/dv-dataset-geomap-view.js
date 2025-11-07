@@ -775,6 +775,7 @@ let dansDvGeoMap = (function() {
         return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     };
 
+    // Extract from the search results
     function extractDansDccdFeatures(result) {
         const t0 = performance.now();
         const resultFeatureArr = [];
@@ -837,11 +838,11 @@ let dansDvGeoMap = (function() {
         return resultFeatureArr;
     };
 
-    const extractPointsFromDansArchaeologyMetaDataOnPage = (metadataBlockPointName) =>  {
-        let dansSpatialPointText = $(`#metadata_${metadataBlockPointName} > td`).text();
+    // const extractPointsFromDansArchaeologyMetaDataOnPage = (metadataBlockPointName) =>  {
+    //     let dansSpatialPointText = $(`#metadata_${metadataBlockPointName} > td`).text();
 
-        return extractPointsFromDansArchaeologyMetadataText(dansSpatialPointText);
-    };
+    //     return extractPointsFromDansArchaeologyMetadataText(dansSpatialPointText);
+    // };
 
     const extractPointsFromDansArchaeologyMetadataText = (dansSpatialPointText) =>  {
         const points = []; // point is not a full feature!
@@ -877,11 +878,11 @@ let dansDvGeoMap = (function() {
         return points;
     };
 
-    const extractPolygonsFromDansArchaeologyMetaDataOnPage = (metadataBlockBoxName) =>  {
-        let dansSpatialBoxText = $(`#metadata_${metadataBlockBoxName} > td`).text();
+    // const extractPolygonsFromDansArchaeologyMetaDataOnPage = (metadataBlockBoxName) =>  {
+    //     let dansSpatialBoxText = $(`#metadata_${metadataBlockBoxName} > td`).text();
 
-        return extractPolygonsFromDansArchaeologyMetadataText(dansSpatialBoxText); 
-    };
+    //     return extractPolygonsFromDansArchaeologyMetadataText(dansSpatialBoxText); 
+    // };
 
     const extractPolygonsFromDansArchaeologyMetadataText = (dansSpatialBoxText) =>  {
         // for DANS arch. we have bounding boxes, but we handle them as polygons
@@ -952,11 +953,11 @@ let dansDvGeoMap = (function() {
         return polygons;
     };
 
-    const extractPointsFromDansDccdMetaDataOnPage = (metadataBlockPointName) =>  {
-        let dansSpatialPointText = $(`#metadata_${metadataBlockPointName} > td`).text();
+    // const extractPointsFromDansDccdMetaDataOnPage = (metadataBlockPointName) =>  {
+    //     let dansSpatialPointText = $(`#metadata_${metadataBlockPointName} > td`).text();
 
-        return extractPointsFromDansDccdMetadataText(dansSpatialPointText);
-    };
+    //     return extractPointsFromDansDccdMetadataText(dansSpatialPointText);
+    // };
 
     const extractPointsFromDansDccdMetadataText = (dansSpatialPointText) =>  {
         const points = []; // point is not a full feature!
@@ -1012,7 +1013,7 @@ let dansDvGeoMap = (function() {
             metadataBlockBoxName: '', // no box (polygon) for now
             pointExtractorFromText: extractPointsFromDansDccdMetadataText,
             // polygonExtractorFromText NOT needed for DCCD
-            pointExtractorFromPage: extractPointsFromDansDccdMetaDataOnPage,
+            //pointExtractorFromPage: extractPointsFromDansDccdMetaDataOnPage,
             // polygonExtractorFromPage NOT needed for DCCD
         },
         archaeology:{
@@ -1021,16 +1022,19 @@ let dansDvGeoMap = (function() {
             metadataBlockPointName: 'dansSpatialPoint',
             pointExtractorFromText: extractPointsFromDansArchaeologyMetadataText,
             polygonExtractorFromText: extractPolygonsFromDansArchaeologyMetadataText,
-            pointExtractorFromPage: extractPointsFromDansArchaeologyMetaDataOnPage,
-            polygonExtractorFromPage: extractPolygonsFromDansArchaeologyMetaDataOnPage,
+            //pointExtractorFromPage: extractPointsFromDansArchaeologyMetaDataOnPage,
+            //polygonExtractorFromPage: extractPolygonsFromDansArchaeologyMetaDataOnPage,
         }
     };
 
     return {
         extractDansArchaeologyFeatures, extractDansDccdFeatures, 
-        extractPointsFromDansArchaeologyMetaDataOnPage, extractPolygonsFromDansArchaeologyMetaDataOnPage,
-        extractPointsFromDansArchaeologyMetadataText, extractPolygonsFromDansArchaeologyMetadataText,
-        extractPointsFromDansDccdMetaDataOnPage, extractPointsFromDansDccdMetadataText,
+        //extractPointsFromDansArchaeologyMetaDataOnPage, 
+        //extractPolygonsFromDansArchaeologyMetaDataOnPage,
+        extractPointsFromDansArchaeologyMetadataText, 
+        extractPolygonsFromDansArchaeologyMetadataText,
+        //extractPointsFromDansDccdMetaDataOnPage, 
+        extractPointsFromDansDccdMetadataText,
         dansDvViewerOptions,
         dansDvMDViewerOptions,
     };
@@ -1060,19 +1064,19 @@ function DvDatasetMDGeoMapViewer(options) {
     if (options.polygonExtractorFromText) {
         polygonExtractorFromText = options.polygonExtractorFromText;
     }
-    let pointExtractorFromPage;
-    if (options.pointExtractorFromPage) {
-        pointExtractorFromPage = options.pointExtractorFromPage;
-    }
-    let polygonExtractorFromPage;
-    if (options.polygonExtractorFromPage) {
-        polygonExtractorFromPage = options.polygonExtractorFromPage;
-    }
+    // let pointExtractorFromPage;
+    // if (options.pointExtractorFromPage) {
+    //     pointExtractorFromPage = options.pointExtractorFromPage;
+    // }
+    // let polygonExtractorFromPage;
+    // if (options.polygonExtractorFromPage) {
+    //     polygonExtractorFromPage = options.polygonExtractorFromPage;
+    // }
 
     DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBoxName, 
                                     pointExtractorFromText, polygonExtractorFromText);
     DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPointName, metadataBlockBoxName, 
-                                        pointExtractorFromPage, polygonExtractorFromPage);
+                                        pointExtractorFromText, polygonExtractorFromText);
 }
 
 /**
@@ -1098,8 +1102,9 @@ function DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPo
         let metadata_spatialBox = $('#' + metadataBlockBoxId);
         if (metadata_spatialBox.length > 0) {
             // Spatial Box metadata found
-
-            let polygons = polygonExtractor(metadataBlockBoxName);
+            let spatialBoxText = $(`#metadata_${metadataBlockBoxName} > td`).text();
+            //let polygons = polygonExtractor(metadataBlockBoxName);
+            let polygons = polygonExtractor(spatialBoxText);
 
             // bounding boxes in their own map
             // check if we have polygons
@@ -1135,8 +1140,9 @@ function DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPo
         let metadata_spatialPoint = $('#' + metadataBlockPointId);
         if (metadata_spatialPoint.length > 0) {
             // Spatial Point metadata found
-            
-            let points = pointExtractor(metadataBlockPointName);
+            let spatialPointText = $(`#metadata_${metadataBlockPointName} > td`).text();
+            //let points = pointExtractor(metadataBlockPointName);
+            let points = pointExtractor(spatialPointText);
             
             if (points.length > 0 ) {
                 //console.log('Points: ' + points);
