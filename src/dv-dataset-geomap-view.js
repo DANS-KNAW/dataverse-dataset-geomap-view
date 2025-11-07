@@ -952,36 +952,87 @@ let dansDvGeoMap = (function() {
         return polygons;
     };
 
-        const dansDvViewerOptions = {
-        
-            dccd: {
-                maxSearchRequestsPerPage: 100,
-                allowOtherBaseMaps: true,
-                allowRetrievingMore: true,
-                // DCCD on DVNL specific settings
-                verses_to_restrict_to: ['dccd', 'stichtingring'],
-                subtree: 'dccd',
-                metadataBlockName: 'dccd',
-                locationCoordinatesFilterquery: encodeURI("dccd-latitude:[* TO *]"),
-                featureExtractor: extractDansDccdFeatures
-            },
-            archaeology: {
-                maxSearchRequestsPerPage: 100,
-                allowOtherBaseMaps: true,
-                allowRetrievingMore: true,
-                // Archaeology specific settings
-                subtree: 'root', // toplevel verse with the metadata block enabled
-                metadataBlockName: 'dansTemporalSpatial',
-                locationCoordinatesFilterquery: encodeURI("dansSpatialPointX:[* TO *] OR dansSpatialBoxNorth:[* TO *]"),
-                featureExtractor: extractDansArchaeologyFeatures
+    const extractPointsFromDansDccdMetaDataOnPage = (metadataBlockPointName) =>  {
+        let dansSpatialPointText = $(`#metadata_${metadataBlockPointName} > td`).text();
+
+        return extractPointsFromDansDccdMetadataText(dansSpatialPointText);
+    };
+
+    const extractPointsFromDansDccdMetadataText = (dansSpatialPointText) =>  {
+        const points = []; // point is not a full feature!
+
+        // Note that we know there is a newline separation we will use the regexp matchAll
+        // extract Longitude/latitude (degrees)'
+         // To match a number, float or int, with optional decimal point: (-?\d+\.?\d*)\s+
+        //let dansSpatialPointDegreesMatches = dansSpatialPointText.matchAll(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*) Longitude\/latitude \(degrees\)/g);
+        // Dccd has different format; example: Latitude: 52.01667 Longitude: 4.70833
+        let dansSpatialPointDegreesMatches = dansSpatialPointText.matchAll(/Latitude:\s+(-?\d+\.?\d*)\s+Longitude:\s+(-?\d+\.?\d*)/g);
+        for (const match of dansSpatialPointDegreesMatches) {
+            // Lat/Lon (degrees) coordinates found
+            let lon = match[2];
+            let lat = match[1];
+            //console.log('Lat: ' + lat + '; Lon: ' + lon);
+            if (!isWGS84CoordinateValid(lat, lon) ) {
+                console.warn('dansDvGeoMap.extractPointsFromDansDccdMetadataText: Invalid WGS84 coordinate: ' + lat + ', ' + lon);
+                continue; // skip this point, because leaflet map can break on invalid coordinates!
             }
+            points.push({"coordinates":[lat, lon], title: `Lon/Lat (degrees): ${lon}, ${lat}`});
+        }
+        return points;
+    };
+    
+    const dansDvViewerOptions = {
+        dccd: {
+            maxSearchRequestsPerPage: 100,
+            allowOtherBaseMaps: true,
+            allowRetrievingMore: true,
+            // DCCD on DVNL specific settings
+            verses_to_restrict_to: ['dccd', 'stichtingring'],
+            subtree: 'dccd',
+            metadataBlockName: 'dccd',
+            locationCoordinatesFilterquery: encodeURI("dccd-latitude:[* TO *]"),
+            featureExtractor: extractDansDccdFeatures
+        },
+        archaeology: {
+            maxSearchRequestsPerPage: 100,
+            allowOtherBaseMaps: true,
+            allowRetrievingMore: true,
+            // Archaeology specific settings
+            subtree: 'root', // toplevel verse with the metadata block enabled
+            metadataBlockName: 'dansTemporalSpatial',
+            locationCoordinatesFilterquery: encodeURI("dansSpatialPointX:[* TO *] OR dansSpatialBoxNorth:[* TO *]"),
+            featureExtractor: extractDansArchaeologyFeatures
+        }
+    };
+
+    const dansDvMDViewerOptions = {
+        dccd:{
+            metadataBlockTitle: 'DCCD Metadata',
+            metadataBlockPointName: 'dccd-location',
+            metadataBlockBoxName: '', // no box (polygon) for now
+            pointExtractorFromText: extractPointsFromDansDccdMetadataText,
+            // polygonExtractorFromText NOT needed for DCCD
+            pointExtractorFromPage: extractPointsFromDansDccdMetaDataOnPage,
+            // polygonExtractorFromPage NOT needed for DCCD
+        },
+        archaeology:{
+            metadataBlockTitle: 'Temporal and Spatial Coverage',
+            metadataBlockBoxName: 'dansSpatialBox',
+            metadataBlockPointName: 'dansSpatialPoint',
+            pointExtractorFromText: extractPointsFromDansArchaeologyMetadataText,
+            polygonExtractorFromText: extractPolygonsFromDansArchaeologyMetadataText,
+            pointExtractorFromPage: extractPointsFromDansArchaeologyMetaDataOnPage,
+            polygonExtractorFromPage: extractPolygonsFromDansArchaeologyMetaDataOnPage,
+        }
     };
 
     return {
         extractDansArchaeologyFeatures, extractDansDccdFeatures, 
         extractPointsFromDansArchaeologyMetaDataOnPage, extractPolygonsFromDansArchaeologyMetaDataOnPage,
         extractPointsFromDansArchaeologyMetadataText, extractPolygonsFromDansArchaeologyMetadataText,
-        dansDvViewerOptions
+        extractPointsFromDansDccdMetaDataOnPage, extractPointsFromDansDccdMetadataText,
+        dansDvViewerOptions,
+        dansDvMDViewerOptions,
     };
 })();
 
@@ -996,28 +1047,43 @@ function DvDatasetMDGeoMapViewer(options) {
     options = options || {}; // nothing yet
    // TODO make the maps optional
 
-    // --- Archaeology (Dataverse archive) specific settings
-    //let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
-    // first the title of the metadata block that contains the coordinates, 
-    // need this to find the metadata
-    // where to get the coordinates and how to extract should be made configurable
-    let metadataBlockTitle = 'Temporal and Spatial Coverage';
-    let metadataBlockBoxName = 'dansSpatialBox';
-    let metadataBlockPointName = 'dansSpatialPoint';
+       let metadataBlockTitle = options.metadataBlockTitle || '';
+    let metadataBlockBoxName = options.metadataBlockBoxName || '';
+    let metadataBlockPointName = options.metadataBlockPointName || '';
 
-    DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBoxName);
-    DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPointName, metadataBlockBoxName);
+    // extractors, can we default them to undefined?
+    let pointExtractorFromText;
+    if (options.pointExtractorFromText) {
+        pointExtractorFromText = options.pointExtractorFromText;
+    }
+    let polygonExtractorFromText;
+    if (options.polygonExtractorFromText) {
+        polygonExtractorFromText = options.polygonExtractorFromText;
+    }
+    let pointExtractorFromPage;
+    if (options.pointExtractorFromPage) {
+        pointExtractorFromPage = options.pointExtractorFromPage;
+    }
+    let polygonExtractorFromPage;
+    if (options.polygonExtractorFromPage) {
+        polygonExtractorFromPage = options.polygonExtractorFromPage;
+    }
+
+    DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBoxName, 
+                                    pointExtractorFromText, polygonExtractorFromText);
+    DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPointName, metadataBlockBoxName, 
+                                        pointExtractorFromPage, polygonExtractorFromPage);
 }
 
 /**
  * Dans Archaeology Metadata GeoMap Viewer for the metadata block section (on metadata tab)
  * When coordinates are found, the map previews are created showing the points and/or polygons in separate maps
  */
-function DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPointName, metadataBlockBoxName) {
-
+function DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPointName, metadataBlockBoxName, 
+                                                pointExtractor, polygonExtractor) {
     // note that sometimes we have only box or only point. 
-    let polygonExtractor = dansDvGeoMap.extractPolygonsFromDansArchaeologyMetaDataOnPage;
-    let pointExtractor = dansDvGeoMap.extractPointsFromDansArchaeologyMetaDataOnPage;
+    // let polygonExtractor = dansDvGeoMap.extractPolygonsFromDansArchaeologyMetaDataOnPage;
+    // let pointExtractor = dansDvGeoMap.extractPointsFromDansArchaeologyMetaDataOnPage;
 
 
     // check if we have what we need
@@ -1252,7 +1318,8 @@ function DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPo
  * Dans Archaeology Metadata GeoMap Viewer for the summary metadata section (just below it)
  * When coordinates are found, the map preview is created showing the points and/or polygons
  */
-function DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBoxName) {
+function DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBoxName, 
+                                        pointExtractorFromText, polygonExtractorFromText) {
     const summaryMetdata = $("#contentTabs");
     if (summaryMetdata.length > 0) {
         // Dataset summary metadata section found
@@ -1268,7 +1335,7 @@ function DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBox
             let dansSpatialPointText = summaryPoints.find("td").text();
             //console.log('Summary DansSpatialPoint: ' + dansSpatialPointText);
 
-            let pointExtractor = dansDvGeoMap.extractPointsFromDansArchaeologyMetadataText;
+            //let pointExtractor = dansDvGeoMap.extractPointsFromDansArchaeologyMetadataText;
             // extract points from the text
             points.push(...pointExtractor(dansSpatialPointText));
             //console.log('Points extracted: ' + points.length);
@@ -1278,7 +1345,7 @@ function DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBox
             let dansSpatialBoxText = summaryBoxes.find("td").text();
             //console.log('Summary DansSpatialBox: ' + dansSpatialBoxText);
 
-            let polygonExtractor = dansDvGeoMap.extractPolygonsFromDansArchaeologyMetadataText;
+            //let polygonExtractor = dansDvGeoMap.extractPolygonsFromDansArchaeologyMetadataText;
             // extract polygons from the text
             polygons.push(...polygonExtractor(dansSpatialBoxText));
             //console.log('Polygons extracted: ' + polygons.length);
