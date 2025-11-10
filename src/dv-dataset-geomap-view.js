@@ -838,6 +838,107 @@ let dansDvGeoMap = (function() {
         return resultFeatureArr;
     };
 
+    const extractDansGeospatialFeatures = (result) => {
+        const t0 = performance.now();
+        const resultFeatureArr = [];
+
+        // console.log('Total of items in this page: ' + result.data.items.length);
+
+        $.each(result.data.items, function (key, value) {
+            //console.log('Processing item: ' + value.name);
+            if (typeof value.metadataBlocks !== "undefined" &&
+                typeof value.metadataBlocks.geospatial !== "undefined") {
+                let authors   = value.authors.map(x => x).join(", ");
+                let publicationDate = value.published_at.substring(0, 10); // fixed format
+                
+                // Handle points and bounding boxes
+                
+                // Bounding boxes
+                let dansSpatialBox = value.metadataBlocks.geospatial.fields.find(x => x.typeName === "geographicBoundingBox");
+                if (typeof dansSpatialBox !== "undefined") {
+                    for (let i = 0; i < dansSpatialBox.value.length; i++) {
+
+                        dansSpatialBoxNorth = dansSpatialBox.value[i]["northLatitude"].value;
+                        dansSpatialBoxEast = dansSpatialBox.value[i]["eastLongitude"].value;
+                        dansSpatialBoxSouth = dansSpatialBox.value[i]["southLatitude"].value;
+                        dansSpatialBoxWest = dansSpatialBox.value[i]["westLongitude"].value;
+                        //console.log('Spatial box: ' + dansSpatialBoxNorth + ', ' + dansSpatialBoxEast + ', ' + dansSpatialBoxSouth + ', ' + dansSpatialBoxWest);
+                        // calculate lat, lon in WGS84, assuming new RD in m.
+
+                        // initialize the feature with the bounding box, WGS8 default
+                        var latLon_NE = {lat: parseFloat(dansSpatialBoxNorth), lon: parseFloat(dansSpatialBoxEast)};
+                        var latLon_SW = {lat: parseFloat(dansSpatialBoxSouth), lon: parseFloat(dansSpatialBoxWest)};
+
+                        const feature = {
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": [[[latLon_SW.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_SW.lon]]] 
+                            },
+                            "properties": {
+                                "name": value.name,
+                                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
+                                "authors": authors,
+                                "publication_date": publicationDate,
+                                "id": value.global_id
+                            }
+                        }
+                        
+                        resultFeatureArr.push(feature);
+                    }
+                } // End box(es) handling
+            }
+        });
+        const t1 = performance.now();
+        //console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
+        return resultFeatureArr;
+    }
+
+    const extractPolygonsFromDansGeospatialMetadataText = (dansSpatialBoxText) =>  {
+        // for DANS arch. we have bounding boxes, but we handle them as polygons
+        let polygons = [];
+        // To match a number, float or int, with optional decimal point: (-?\d+\.?\d*)\s+
+        // eaxample: 4.0 5.0 52.0 51.0
+        // w e n s
+        console.log('dansSpatialBoxText: ' + dansSpatialBoxText);
+        let dansSpatialBoxDegreesMatches = dansSpatialBoxText.matchAll(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s*/g);
+        for (const match of dansSpatialBoxDegreesMatches) {
+            //console.log('Lon/Lat (degrees) coordinates found');
+            let dansSpatialBoxWest = match[1];
+            let dansSpatialBoxEast = match[2];
+            let dansSpatialBoxNorth = match[3];
+            let dansSpatialBoxSouth = match[4];
+
+
+            // initialize the feature with the bounding box, WGS8 default
+            var latLon_NE = {lat: parseFloat(dansSpatialBoxNorth), lon: parseFloat(dansSpatialBoxEast)};
+            var latLon_SW = {lat: parseFloat(dansSpatialBoxSouth), lon: parseFloat(dansSpatialBoxWest)};
+
+            if (!isWGS84CoordinateValid(latLon_NE.lat, latLon_NE.lon) ) {
+                console.warn('dansDvGeoMap.extractPolygonsFromDansArchaeologyMetadataText: Invalid WGS84 coordinate: ' + latLon_NE.lat + ', ' + latLon_NE.lon);
+                continue; // skip this point, because leaflet map can break on invalid coordinates!
+            }
+            if (!isWGS84CoordinateValid(latLon_SW.lat, latLon_SW.lon) ) {
+                console.warn('dansDvGeoMap.extractPolygonsFromDansArchaeologyMetadataText: Invalid WGS84 coordinate: ' + latLon_SW.lat + ', ' + latLon_SW.lon);
+                continue; // skip this point, because leaflet map can break on invalid coordinates!
+            }
+            // valid feature
+            polygons.push({"coordinates": [[latLon_SW.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_SW.lon]], 
+                                    "title": `Lon/Lat (degrees): ${dansSpatialBoxNorth}, ${dansSpatialBoxEast}, 
+                                    ${dansSpatialBoxSouth}, ${dansSpatialBoxWest}`});
+        }
+
+        return polygons;
+    };
+
     // const extractPointsFromDansArchaeologyMetaDataOnPage = (metadataBlockPointName) =>  {
     //     let dansSpatialPointText = $(`#metadata_${metadataBlockPointName} > td`).text();
 
@@ -992,7 +1093,7 @@ let dansDvGeoMap = (function() {
             subtree: 'dccd',
             metadataBlockName: 'dccd',
             locationCoordinatesFilterquery: encodeURI("dccd-latitude:[* TO *]"),
-            featureExtractor: extractDansDccdFeatures
+            featureExtractor: extractDansDccdFeatures,
         },
         archaeology: {
             maxSearchRequestsPerPage: 100,
@@ -1002,8 +1103,18 @@ let dansDvGeoMap = (function() {
             subtree: 'root', // toplevel verse with the metadata block enabled
             metadataBlockName: 'dansTemporalSpatial',
             locationCoordinatesFilterquery: encodeURI("dansSpatialPointX:[* TO *] OR dansSpatialBoxNorth:[* TO *]"),
-            featureExtractor: extractDansArchaeologyFeatures
-        }
+            featureExtractor: extractDansArchaeologyFeatures,
+        },
+        geospatial: {
+            maxSearchRequestsPerPage: 100,
+            allowOtherBaseMaps: true,
+            allowRetrievingMore: true,
+            // Geospatial specific settings
+            subtree: 'root',
+            metadataBlockName: 'geospatial',
+            locationCoordinatesFilterquery: encodeURI("westLongitude:[* TO *]"),
+            featureExtractor: extractDansGeospatialFeatures,
+        },
     };
 
     const dansDvMDViewerOptions = {
@@ -1024,17 +1135,23 @@ let dansDvGeoMap = (function() {
             polygonExtractorFromText: extractPolygonsFromDansArchaeologyMetadataText,
             //pointExtractorFromPage: extractPointsFromDansArchaeologyMetaDataOnPage,
             //polygonExtractorFromPage: extractPolygonsFromDansArchaeologyMetaDataOnPage,
-        }
+        },
+        geospatial:{
+            metadataBlockTitle: 'Geospatial Metadata',
+            metadataBlockBoxName: 'geographicBoundingBox',
+            polygonExtractorFromText: dansDvGeoMap.extractPolygonsFromDansGeospatialMetadataText,
+        },
     };
 
     return {
-        extractDansArchaeologyFeatures, extractDansDccdFeatures, 
+        extractDansArchaeologyFeatures, extractDansDccdFeatures, extractDansGeospatialFeatures,
         //extractPointsFromDansArchaeologyMetaDataOnPage, 
         //extractPolygonsFromDansArchaeologyMetaDataOnPage,
         extractPointsFromDansArchaeologyMetadataText, 
         extractPolygonsFromDansArchaeologyMetadataText,
         //extractPointsFromDansDccdMetaDataOnPage, 
         extractPointsFromDansDccdMetadataText,
+        extractPolygonsFromDansGeospatialMetadataText,
         dansDvViewerOptions,
         dansDvMDViewerOptions,
     };
