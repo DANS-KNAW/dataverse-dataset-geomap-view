@@ -95,8 +95,18 @@
 <script>
 // Assume we have jQuery, because its is in the footer of the Dataverse application
 $().ready(function() {
+    // Standard Dataverse: geospatial
+    DvDatasetGeoMapViewer(standardDvGeoMap.dvViewerOptions.geospatial);
+    DvDatasetMDGeoMapViewer(standardDvGeoMap.dvMDViewerOptions.geospatial);
+
     // for DANS use either archaeology or dccd options
-    DvDatasetGeoMapViewer(dansDvGeoMap.dansDvViewerOptions.dccd);
-    DvDatasetMDGeoMapViewer();
+    //
+    // DCCD datasets
+    //DvDatasetGeoMapViewer(dansDvGeoMap.dansDvViewerOptions.dccd);
+    //DvDatasetMDGeoMapViewer(dansDvGeoMap.dansDvMDViewerOptions.dccd);
+    //
+    // Archaeology datasets
+    //DvDatasetGeoMapViewer(dansDvGeoMap.dansDvViewerOptions.archaeology);
+    //DvDatasetMDGeoMapViewer(dansDvGeoMap.dansDvMDViewerOptions.archaeology);
 });
 </script>

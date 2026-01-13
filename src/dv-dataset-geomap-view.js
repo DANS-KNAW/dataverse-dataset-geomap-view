@@ -1,17 +1,29 @@
-/*
+/** 
  * DvDatasetGeoMapViewer
  * This should be called when the Dataverse page is loaded (via the custom footer or other means)
  * 
  * Note that this code is dependent on the Dataverse HTML elements and CSS classes and ids.
  * Dataverse is a PrimeFaces (PF) based Java web application.
  * 
- * options:
- * - maxSearchRequestsPerPage: the number of datasets to retrieve per search request (default 100) 
- *   must be between 1 and 1000 otherwise it is clipped to 1 or 1000
  * 
+ * @param {Object} options - Configuration options for the map viewer.
+ * 
+ * @param {string} [options.metadataBlockName='geospatial'] - The name of the metadata block containing location coordinates.
+ * @param {Function} [options.featureExtractor=standardDvGeoMap.extractGeospatialFeatures] - Function to extract geospatial features from the search API result.
+ * @param {string} [options.locationCoordinatesFilterquery=encodeURI("westLongitude:[* TO *]")] - Filter query for datasets with location coordinates.
+ * @param {Array<string>} [options.verses_to_restrict_to] - Array of dataverse aliases to restrict the map viewer to. If not provided or empty, the map viewer is allowed on all dataverse search pages.
+ * @param {string} [options.subtree='root'] - The dataverse subtree alias to search within.
+ * @param {string} [options.alternativeBaseUrl] - Alternative base URL for API requests instead of the current page's base URL.
+ * @param {number} [options.maxSearchRequestsPerPage=100] - Number of datasets to retrieve per search request (between 1 and 1000).
+ * @param {boolean} [options.allowOtherBaseMaps=false] - Allow the user to select other base maps (e.g., satellite view).
+ * @param {boolean} [options.allowRetrievingMore=false] - Allow the user to retrieve more datasets beyond the initial batch.
+ * 
+ * @returns {undefined} No return value.
  */
 function DvDatasetGeoMapViewer(options) {
     options = options || {};
+
+    // --- apply options if provided, otherwise use defaults
 
     let verses_to_restrict_to = []; // just allow all by default
     if (options.verses_to_restrict_to) {
@@ -23,35 +35,19 @@ function DvDatasetGeoMapViewer(options) {
         return; // not on a dataverse search page where we want to show the map viewer
     }
 
-    // --- Archaeology (Dataverse archive) specific settings
-//    let subtree = 'root'; // Note that Dataverse can be configured to have another 'root' verse alias
-//    let metadataBlockName = 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
-//    let featureExtractor = dansDvGeoMap.extractDansArchaeologyFeatures; // specific feature extractor for archaeology
-    // DCCD on DVNL
-//    let subtree = 'dccd'; // subtree for DCCD on DVNL
-//    let metadataBlockName = 'dccd'; // specific metadata block for dccd containing location coordinates
-//    let featureExtractor = dansDvGeoMap.extractDansDccdFeatures; // specific feature extractor for dccd
-
-    // apply options, make Archaeology the default for NOW!
+    // Geospatial specific settings as default values
     let subtree = options.subtree || 'root'; // Note that Dataverse can be configured to have another 'root' verse alias
     
-    let metadataBlockName = options.metadataBlockName || 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
-    let featureExtractor = options.featureExtractor || dansDvGeoMap.extractDansArchaeologyFeatures; // specific feature extractor for archaeology
+    // these next three should be specified, so not really optional and thus must have a default
+    let metadataBlockName = options.metadataBlockName || 'geospatial'; // specific metadata block for geospatial containing location coordinates
+    let featureExtractor = options.featureExtractor || standardDvGeoMap.extractGeospatialFeatures; // specific feature extractor for geospatial
+    let locationCoordinatesFilterquery = options.locationCoordinatesFilterquery || encodeURI("westLongitude:[* TO *]");
 
-
-    // filter query to get only datasets with location coordinates, other datasets we cant use for displaying on a map
-    // Note that the filter query is specific for the metadata block
-    // "dansSpatialBoxNorth:[* TO *]" for the boxes  
-    // "dansSpatialPointX:[* TO *]" for the points
-//    let locationCoordinatesFilterquery = encodeURI("dansSpatialPointX:[* TO *] OR dansSpatialBoxNorth:[* TO *]");
-//    let locationCoordinatesFilterquery = encodeURI("dccd-latitude:[* TO *]");
-    let locationCoordinatesFilterquery = options.locationCoordinatesFilterquery || encodeURI("dansSpatialPointX:[* TO *] OR dansSpatialBoxNorth:[* TO *]");
 
     let alternativeBaseUrl; // optionally use an alternative base url instead of the one of the current web page
     if (options.alternativeBaseUrl) {
         alternativeBaseUrl = options.alternativeBaseUrl;
     }
-    // --- apply options if provided
 
     const maxSearchRequestsPerPage = options.maxSearchRequestsPerPage || 100; // default;  The max for the search API is 1000
     // fix useless values
@@ -493,7 +489,7 @@ function DvDatasetGeoMapViewer(options) {
 
     // Construct the html elements for the mapview
     // Note that we fixed the height of the map to 480px; was 320px (better for sideview)
-    // Also styling done here, could be done in css
+    // Also styling is done here, but could be done in CSS
     function createMapViewDiv() {
         let mapviewDiv = $('<div id="' + geomapViewerId + '"></div>');
 
@@ -554,24 +550,24 @@ function DvDatasetGeoMapViewer(options) {
  * Note that this cannot be restricted to a specific subverse;
  *  if the metadata block is available it will try to show the maps
  * 
- * @param {
- *  metadataBlockTitle: string, title of the metadata block section (on metadata tab)   
- *  metadataBlockBoxName: string, name of the metadata block field for bounding box coordinates
- *  metadataBlockPointName: string, name of the metadata block field for point coordinates
- *  pointExtractorFromText: function, extractor function to extract points from text
- *  polygonExtractorFromText: function, extractor function to extract polygons from text
- * } options 
+ * @param {Object} options - Configuration options for the metadata geomap viewer.
+ * 
+ * @param {string} options.metadataBlockTitle - Title of the metadata block section (on metadata tab), note that only one supported language changes will make this fail.
+ * @param {string} options.metadataBlockBoxName - Name of the metadata block field for bounding box coordinates.
+ * @param {string} options.metadataBlockPointName - Name of the metadata block field for point coordinates.
+ * @param {function} [options.pointExtractorFromText] - Extractor function to extract points from text.
+ * @param {function} [options.polygonExtractorFromText] - Extractor function to extract polygons from text.
  * 
  */
 function DvDatasetMDGeoMapViewer(options) {
-    options = options || {}; // nothing yet
-    // TODO make the maps optional
+    options = options || {};
+    // TODO make the maps optional, allowing for only one of them
 
+    // no real defaults
     let metadataBlockTitle = options.metadataBlockTitle || '';
     let metadataBlockBoxName = options.metadataBlockBoxName || '';
     let metadataBlockPointName = options.metadataBlockPointName || '';
 
-    // extractors, can we default them to undefined?
     let pointExtractorFromText;
     if (options.pointExtractorFromText) {
         pointExtractorFromText = options.pointExtractorFromText;
