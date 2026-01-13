@@ -837,7 +837,7 @@ function DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBox
 
             //let pointExtractor = dansDvGeoMap.extractPointsFromDansArchaeologyMetadataText;
             // extract points from the text
-            points.push(...pointExtractor(dansSpatialPointText));
+            points.push(...pointExtractorFromText(dansSpatialPointText));
             //console.log('Points extracted: ' + points.length);
         }       
         if  (summaryBoxes.length > 0) {
