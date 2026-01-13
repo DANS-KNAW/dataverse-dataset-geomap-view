@@ -1,6 +1,6 @@
 /*
  * DvDatasetGeoMapViewer
- * This should be called when the page is loaded
+ * This should be called when the Dataverse page is loaded (via the custom footer or other means)
  * 
  * Note that this code is dependent on the Dataverse HTML elements and CSS classes and ids.
  * Dataverse is a PrimeFaces (PF) based Java web application.
@@ -34,6 +34,7 @@ function DvDatasetGeoMapViewer(options) {
 
     // apply options, make Archaeology the default for NOW!
     let subtree = options.subtree || 'root'; // Note that Dataverse can be configured to have another 'root' verse alias
+    
     let metadataBlockName = options.metadataBlockName || 'dansTemporalSpatial'; // specific metadata block for archaeology containing location coordinates
     let featureExtractor = options.featureExtractor || dansDvGeoMap.extractDansArchaeologyFeatures; // specific feature extractor for archaeology
 
@@ -550,11 +551,21 @@ function DvDatasetGeoMapViewer(options) {
  * Adds a map just below the metadata summary section, above the tabs
  * Adds maps in the metadata block with coordinates, for points boxes or both
  * 
- * @param {} options 
+ * Note that this cannot be restricted to a specific subverse;
+ *  if the metadata block is available it will try to show the maps
+ * 
+ * @param {
+ *  metadataBlockTitle: string, title of the metadata block section (on metadata tab)   
+ *  metadataBlockBoxName: string, name of the metadata block field for bounding box coordinates
+ *  metadataBlockPointName: string, name of the metadata block field for point coordinates
+ *  pointExtractorFromText: function, extractor function to extract points from text
+ *  polygonExtractorFromText: function, extractor function to extract polygons from text
+ * } options 
+ * 
  */
 function DvDatasetMDGeoMapViewer(options) {
     options = options || {}; // nothing yet
-   // TODO make the maps optional
+    // TODO make the maps optional
 
     let metadataBlockTitle = options.metadataBlockTitle || '';
     let metadataBlockBoxName = options.metadataBlockBoxName || '';
@@ -565,6 +576,7 @@ function DvDatasetMDGeoMapViewer(options) {
     if (options.pointExtractorFromText) {
         pointExtractorFromText = options.pointExtractorFromText;
     }
+
     let polygonExtractorFromText;
     if (options.polygonExtractorFromText) {
         polygonExtractorFromText = options.polygonExtractorFromText;
@@ -572,6 +584,7 @@ function DvDatasetMDGeoMapViewer(options) {
 
     DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBoxName, 
                                     pointExtractorFromText, polygonExtractorFromText);
+
     DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPointName, metadataBlockBoxName, 
                                         pointExtractorFromText, polygonExtractorFromText);
 }
@@ -579,6 +592,8 @@ function DvDatasetMDGeoMapViewer(options) {
 /**
  * Metadata GeoMap Viewer for the metadata block section (on metadata tab)
  * When coordinates are found, the map previews are created showing the points and/or polygons in separate maps
+ * 
+ * same options as DvDatasetMDGeoMapViewer
  */
 function DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPointName, metadataBlockBoxName, 
                                                 pointExtractor, polygonExtractor) {
@@ -817,6 +832,8 @@ function DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPo
 /**
  * Metadata GeoMap Viewer for the summary metadata section (just below it)
  * When coordinates are found, the map preview is created showing the points and/or polygons
+ * 
+ * same options as DvDatasetMDGeoMapViewer
  */
 function DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBoxName, 
                                         pointExtractorFromText, polygonExtractorFromText) {
@@ -931,16 +948,22 @@ function DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBox
 /**
  * Extraction methods for Dataverse geospatial metadata 
  * as available by default in the 'Geospatial Metadata' block
+ * From a search result from the Dataverse search API
+ * and from metadata text in the metadata block 
+ * 
+ * Note that that block only supports boundingboxes that we convert to polygons
  */
 let standardDvGeoMap = (function() {
 
+    // helper function to validate WGS84 coordinates
     function isWGS84CoordinateValid(lat, lon) {
         // Lat Lon decimal degrees
         // Note that lon might be valid outside the range -180 to 180, because of cyclic nature
+        // but we ignore that for now
         return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     };
 
-    const extractDansGeospatialFeatures = (result) => {
+    const extractGeospatialFeatures = (result) => {
         const t0 = performance.now();
         const resultFeatureArr = [];
 
@@ -953,23 +976,23 @@ let standardDvGeoMap = (function() {
                 let authors   = value.authors.map(x => x).join(", ");
                 let publicationDate = value.published_at.substring(0, 10); // fixed format
                 
-                // Handle points and bounding boxes
+                // Handle points and or bounding boxes
                 
                 // Bounding boxes
-                let dansSpatialBox = value.metadataBlocks.geospatial.fields.find(x => x.typeName === "geographicBoundingBox");
-                if (typeof dansSpatialBox !== "undefined") {
-                    for (let i = 0; i < dansSpatialBox.value.length; i++) {
+                let spatialBox = value.metadataBlocks.geospatial.fields.find(x => x.typeName === "geographicBoundingBox");
+                if (typeof spatialBox !== "undefined") {
+                    for (let i = 0; i < spatialBox.value.length; i++) {
 
-                        dansSpatialBoxNorth = dansSpatialBox.value[i]["northLatitude"].value;
-                        dansSpatialBoxEast = dansSpatialBox.value[i]["eastLongitude"].value;
-                        dansSpatialBoxSouth = dansSpatialBox.value[i]["southLatitude"].value;
-                        dansSpatialBoxWest = dansSpatialBox.value[i]["westLongitude"].value;
-                        //console.log('Spatial box: ' + dansSpatialBoxNorth + ', ' + dansSpatialBoxEast + ', ' + dansSpatialBoxSouth + ', ' + dansSpatialBoxWest);
+                        spatialBoxNorth = spatialBox.value[i]["northLatitude"].value;
+                        spatialBoxEast = spatialBox.value[i]["eastLongitude"].value;
+                        spatialBoxSouth = spatialBox.value[i]["southLatitude"].value;
+                        spatialBoxWest = spatialBox.value[i]["westLongitude"].value;
+                        //console.log('Spatial box: ' + spatialBoxNorth + ', ' + spatialBoxEast + ', ' + spatialBoxSouth + ', ' + spatialBoxWest);
                         // calculate lat, lon in WGS84, assuming new RD in m.
 
                         // initialize the feature with the bounding box, WGS8 default
-                        var latLon_NE = {lat: parseFloat(dansSpatialBoxNorth), lon: parseFloat(dansSpatialBoxEast)};
-                        var latLon_SW = {lat: parseFloat(dansSpatialBoxSouth), lon: parseFloat(dansSpatialBoxWest)};
+                        var latLon_NE = {lat: parseFloat(spatialBoxNorth), lon: parseFloat(spatialBoxEast)};
+                        var latLon_SW = {lat: parseFloat(spatialBoxSouth), lon: parseFloat(spatialBoxWest)};
 
                         const feature = {
                             "type": "Feature",
@@ -1000,32 +1023,32 @@ let standardDvGeoMap = (function() {
         return resultFeatureArr;
     };
 
-    const extractPolygonsFromDansGeospatialMetadataText = (dansSpatialBoxText) =>  {
+    const extractPolygonsFromGeospatialMetadataText = (spatialBoxText) =>  {
         // for DANS arch. we have bounding boxes, but we handle them as polygons
         let polygons = [];
         // To match a number, float or int, with optional decimal point: (-?\d+\.?\d*)\s+
         // example: 4.0 5.0 52.0 51.0
         // west east north south
-        console.log('dansSpatialBoxText: ' + dansSpatialBoxText);
-        let dansSpatialBoxDegreesMatches = dansSpatialBoxText.matchAll(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s*/g);
-        for (const match of dansSpatialBoxDegreesMatches) {
+        console.log('spatialBoxText: ' + spatialBoxText);
+        let spatialBoxDegreesMatches = spatialBoxText.matchAll(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s*/g);
+        for (const match of spatialBoxDegreesMatches) {
             //console.log('Lon/Lat (degrees) coordinates found');
-            let dansSpatialBoxWest = match[1];
-            let dansSpatialBoxEast = match[2];
-            let dansSpatialBoxNorth = match[3];
-            let dansSpatialBoxSouth = match[4];
+            let spatialBoxWest = match[1];
+            let spatialBoxEast = match[2];
+            let spatialBoxNorth = match[3];
+            let spatialBoxSouth = match[4];
 
 
             // initialize the feature with the bounding box, WGS8 default
-            var latLon_NE = {lat: parseFloat(dansSpatialBoxNorth), lon: parseFloat(dansSpatialBoxEast)};
-            var latLon_SW = {lat: parseFloat(dansSpatialBoxSouth), lon: parseFloat(dansSpatialBoxWest)};
+            var latLon_NE = {lat: parseFloat(spatialBoxNorth), lon: parseFloat(spatialBoxEast)};
+            var latLon_SW = {lat: parseFloat(spatialBoxSouth), lon: parseFloat(spatialBoxWest)};
 
             if (!isWGS84CoordinateValid(latLon_NE.lat, latLon_NE.lon) ) {
-                console.warn('dansDvGeoMap.extractPolygonsFromDansArchaeologyMetadataText: Invalid WGS84 coordinate: ' + latLon_NE.lat + ', ' + latLon_NE.lon);
+                console.warn('Invalid WGS84 coordinate: ' + latLon_NE.lat + ', ' + latLon_NE.lon);
                 continue; // skip this point, because leaflet map can break on invalid coordinates!
             }
             if (!isWGS84CoordinateValid(latLon_SW.lat, latLon_SW.lon) ) {
-                console.warn('dansDvGeoMap.extractPolygonsFromDansArchaeologyMetadataText: Invalid WGS84 coordinate: ' + latLon_SW.lat + ', ' + latLon_SW.lon);
+                console.warn('Invalid WGS84 coordinate: ' + latLon_SW.lat + ', ' + latLon_SW.lon);
                 continue; // skip this point, because leaflet map can break on invalid coordinates!
             }
             // valid feature
@@ -1034,8 +1057,8 @@ let standardDvGeoMap = (function() {
                                     [latLon_NE.lat, latLon_NE.lon],
                                     [latLon_SW.lat, latLon_NE.lon],
                                     [latLon_SW.lat, latLon_SW.lon]], 
-                                    "title": `Lon/Lat (degrees): ${dansSpatialBoxNorth}, ${dansSpatialBoxEast}, 
-                                    ${dansSpatialBoxSouth}, ${dansSpatialBoxWest}`});
+                                    "title": `Lon/Lat (degrees): ${spatialBoxNorth}, ${spatialBoxEast}, 
+                                    ${spatialBoxSouth}, ${spatialBoxWest}`});
         }
 
         return polygons;
@@ -1050,7 +1073,7 @@ let standardDvGeoMap = (function() {
             subtree: 'root',
             metadataBlockName: 'geospatial',
             locationCoordinatesFilterquery: encodeURI("westLongitude:[* TO *]"),
-            featureExtractor: extractDansGeospatialFeatures,
+            featureExtractor: extractGeospatialFeatures,
         },
     };
 
@@ -1058,13 +1081,14 @@ let standardDvGeoMap = (function() {
         geospatial:{
             metadataBlockTitle: 'Geospatial Metadata',
             metadataBlockBoxName: 'geographicBoundingBox',
-            polygonExtractorFromText: extractPolygonsFromDansGeospatialMetadataText,
+            polygonExtractorFromText: extractPolygonsFromGeospatialMetadataText,
+            // no point extractor, as geospatial block does not have points
         },
     };
 
     return {
-        extractDansGeospatialFeatures,
-        extractPolygonsFromDansGeospatialMetadataText,
+        extractGeospatialFeatures,
+        extractPolygonsFromGeospatialMetadataText,
         dvViewerOptions,
         dvMDViewerOptions,
     };
@@ -1073,7 +1097,17 @@ let standardDvGeoMap = (function() {
 
 
 /**
- * DANS Module for extracting features from a search result from the Dataverse search API
+ * DANS Module for extracting features 
+ * from a search result from the Dataverse search API
+ * and from metadata text in the metadata block
+ * 
+ * Note that thsis is specific for the archaeology data station
+ * with the dansTemporalSpatial metadata block
+ * and the DCCD subverse on the DatverseNL installation with the dccd-location metadata block. 
+ * 
+ * Some DANS stations might use the geospatial metadata block,
+ * in that case the standardDvGeoMap module can be used
+ * 
  */
 let dansDvGeoMap = (function() {
     /**
@@ -1296,9 +1330,11 @@ let dansDvGeoMap = (function() {
         }
     };
 
+    // same as with standardDvGeoMap, but code duplicated for now
     function isWGS84CoordinateValid(lat, lon) {
         // Lat Lon decimal degrees
         // Note that lon might be valid outside the range -180 to 180, because of cyclic nature
+        // but we ignore that for now
         return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     };
 
