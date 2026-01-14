@@ -66,5 +66,6 @@ At some point we could have a 'build' step that uses the version to rename the o
 
 ## Tests 
 
-For testing purposes a Python script is provided that allows to add datasets with coordinates to the archive. This can be found in [the testdata folder](../examples/testdata). 
+For testing purposes Python scripts are provided that allow to add datasets with coordinates to the Dataverse archive. This can be found in [the testdata folder](../examples/testdata). 
+
 Also, some stress testing has been done, the results and the JMeter file is provided in [the stresstests folder](../examples/testdata/stresstests). 
