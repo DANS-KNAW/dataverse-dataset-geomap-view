@@ -69,14 +69,10 @@ def generate_WGS84_coordinates_data(n, d):
         for box in coordinates_data:
             if box[2] > box[0]:
                 # swap south and north
-                temp = box[2]
-                box[2] = box[0]
-                box[0] = temp
+                box[2], box[0] = box[0], box[2]
             if box[3] > box[1]:
                 # swap west and east
-                temp = box[3]
-                box[3] = box[1]
-                box[1] = temp
+                box[3], box[1] = box[1], box[3]
     
     return coordinates_data
 
