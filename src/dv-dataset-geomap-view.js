@@ -49,7 +49,7 @@ function DvDatasetGeoMapViewer(options) {
         alternativeBaseUrl = options.alternativeBaseUrl;
     }
 
-    const maxSearchRequestsPerPage = options.maxSearchRequestsPerPage || 100; // default;  The max for the search API is 1000
+    let maxSearchRequestsPerPage = options.maxSearchRequestsPerPage || 100; // default;  The max for the search API is 1000
     // fix useless values
     if (maxSearchRequestsPerPage > 1000) {
         console.warn('DvDatasetGeoMapViewer: Max search requests per page is too high; setting it to 1000');
@@ -132,13 +132,18 @@ function DvDatasetGeoMapViewer(options) {
     });
 
     // detect if we are on a dataverse search page that is allowed to show the map viewer
+    //
+    // If we want all subverses of a specific verse to show the map (enabled or restricted to), 
+    // we cannot simply specify the common parent, we need to supply all the verses in a list. 
+    // The reason is that the path in the URL only contains the verse (alias) 
+    // and we cannot determine from that if it is a child of another verse that might be 'enabled'.
     function isAllowedToViewMap(verses_to_restrict_to) {
         // if the list is empty, there is no restriction
         if (!verses_to_restrict_to || verses_to_restrict_to.length === 0) {
             return true;
         }
         // otherwise the url must end in dataverse/{verse}
-        let path = window.location.pathname;
+        const path = window.location.pathname;
         for (let verse of verses_to_restrict_to) {
             if (path.endsWith('/dataverse/' + verse)) {
                 // we are on a dataverse search page where we want to show the map viewer
@@ -269,10 +274,10 @@ function DvDatasetGeoMapViewer(options) {
     function doSearchRequest(extractionUrl) {
         $('#' + geomapViewerId + '-spinner-searchLocation').show();
 
-        const t0 = performance.now();
+        //const t0 = performance.now();
         $.ajax({url: extractionUrl, 
             success: function(result){
-                const t1 = performance.now();
+                //const t1 = performance.now();
                 //console.log(`Result of ajax call took ${t1 - t0} milliseconds.`);
                 processSearchResult(result);
                 numPagesRetieved++;
@@ -294,7 +299,7 @@ function DvDatasetGeoMapViewer(options) {
     }
 
     function processSearchResult(result) {
-        const t0 = performance.now();
+        //const t0 = performance.now();
         totalNumberOfDatasetsFound = result.data.total_count;
         //console.log('Total of ' + result.data.total_count + " datasets found");
 
@@ -364,7 +369,7 @@ function DvDatasetGeoMapViewer(options) {
 
         // update result totals retrieval indication
         $("#" + geomapViewerId + "-result-totals").html(" Retrieved " + numRetrieved + " location(s)"+ " (total number of datasets: " + result.data.total_count + ")");
-        const t1 = performance.now();
+        //const t1 = performance.now();
         //console.log(`processSearchResult took ${t1 - t0} milliseconds.`);
     }
 
@@ -500,7 +505,7 @@ function DvDatasetGeoMapViewer(options) {
         let spinner = $('<span id="' + geomapViewerId + '-spinner-searchLocation" style="display:none;"></span>');
         //spinner.append('<span class="spinner-border" role="status" style="width: 1.2rem; height: 1.2rem;" ><span class="sr-only">Loading...</span></span>');
         // Note that we use a resource from the dataverse web application
-        spinner.append('<span>&nbsp;</span><span>Loading...</span><img src="/resources/images/ajax-loading.gif" style="width: 1.2em; height: 1.2em;" />');
+        spinner.append('<span>&nbsp;</span><span>Loading...</span><img src="/resources/images/ajax-loading.gif" style="width: 1.2em; height: 1.2em;" alt="Loading"/>');
 
         controls.append(spinner);
         
@@ -530,9 +535,9 @@ function DvDatasetGeoMapViewer(options) {
         // add legend at the bottom, assume we always can have points and or bounding boxes
         let legend = $('<div style="padding: 5px 0 0 5px;margin: 5px;">' + 
             'Location Markers: ' +
-            '<img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" style="height: 2.4rem;" />' +
+            '<img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" style="height: 2.4rem;" alt="Example blue ballon marker; indicates a Point"/>' +
             ' Point' + 
-            '; ' + '<img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" style="height: 2.4rem;" />' +
+            '; ' + '<img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" style="height: 2.4rem;" alt="Example red ballon marker; indicates an Area"/>' +
             ' Area ' + 
             ' - The marker is at the center of the bounding box' +
             '</div>');
@@ -960,7 +965,7 @@ let standardDvGeoMap = (function() {
     };
 
     const extractGeospatialFeatures = (result) => {
-        const t0 = performance.now();
+        //const t0 = performance.now();
         const resultFeatureArr = [];
 
         // console.log('Total of items in this page: ' + result.data.items.length);
@@ -1014,7 +1019,7 @@ let standardDvGeoMap = (function() {
                 } // End box(es) handling
             }
         });
-        const t1 = performance.now();
+        //const t1 = performance.now();
         //console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
         return resultFeatureArr;
     };
@@ -1113,7 +1118,7 @@ let dansDvGeoMap = (function() {
      * The result is an array with 'geojson' features
      */
     const extractDansArchaeologyFeatures = (result) => {
-        const t0 = performance.now();
+        //const t0 = performance.now();
         const resultFeatureArr = [];
 
         // console.log('Total of items in this page: ' + result.data.items.length);
@@ -1234,7 +1239,7 @@ let dansDvGeoMap = (function() {
                 } // End box(es) handling
             }
         });
-        const t1 = performance.now();
+        //const t1 = performance.now();
         //console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
         return resultFeatureArr;
     }
@@ -1336,7 +1341,7 @@ let dansDvGeoMap = (function() {
 
     // Extract from the search results
     function extractDansDccdFeatures(result) {
-        const t0 = performance.now();
+        //const t0 = performance.now();
         const resultFeatureArr = [];
 
         // console.log('Total of items in this page: ' + result.data.items.length);
@@ -1392,7 +1397,7 @@ let dansDvGeoMap = (function() {
                 }
             }
         });
-        const t1 = performance.now();
+        //const t1 = performance.now();
         //console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
         return resultFeatureArr;
     };

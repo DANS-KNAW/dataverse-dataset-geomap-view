@@ -114,7 +114,7 @@ if __name__ == '__main__':
     # determine location of this python file
     path = os.path.dirname(os.path.realpath(__file__))
 
-    # Using a template engine to generate json was simpler that using the json module and traversing the hierarchy
+    # Using a template engine to generate JSON was simpler than using the json module and traversing the hierarchy
     with open(path + '/dataset_json_archaeology.j2', 'r') as f:
          template = jinja2.Template(f.read())
 

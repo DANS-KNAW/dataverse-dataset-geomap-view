@@ -45,7 +45,7 @@ def generate_WGS84_coordinates_data(n, d):
     # scale and shift coordinates_data to match (almost) valid WGS84 coordinates
     # Longitude [-180,180], Latitude [-90,90]
     
-    # Note that RD had Lon/lat and WGS84 Lat/Lon ...
+    # Note that RD has Lon/lat and WGS84 Lat/Lon
 
     # Latitude or NORTH
     coordinates_data[:, 0] *= 180.0
