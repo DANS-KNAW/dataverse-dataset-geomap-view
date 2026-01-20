@@ -206,7 +206,7 @@ function DvDatasetGeoMapViewer(options) {
         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     });
     // Initialize map, with OpenStreetMap centered on the Netherlands but showing most of Europe
-    // should make this configuarble, but for now it is hardcoded
+    // should make this configurable, but for now it is hardcoded
     var map = L.map(mapInsertionId).setView([51.505, -0.09], 3);
     openStreetMap.addTo(map);
 
@@ -261,7 +261,7 @@ function DvDatasetGeoMapViewer(options) {
     let baseUrl = alternativeBaseUrl ? alternativeBaseUrl : getBaseUrl();
     let totalNumberOfDatasetsFound = 0;
     let start = 0;
-    let numPagesRetieved = 0;
+    let numPagesRetrieved = 0;
     let pageSize = maxSearchRequestsPerPage;
     let numRetrieved = 0;
     let searchApiUrl = constructSearchApiUrl(baseUrl)
@@ -280,9 +280,9 @@ function DvDatasetGeoMapViewer(options) {
                 //const t1 = performance.now();
                 //console.log(`Result of ajax call took ${t1 - t0} milliseconds.`);
                 processSearchResult(result);
-                numPagesRetieved++;
+                numPagesRetrieved++;
                 // determine if more could be retrieved
-                if (allowRetrievingMore && numPagesRetieved*pageSize < totalNumberOfDatasetsFound) {
+                if (allowRetrievingMore && numPagesRetrieved*pageSize < totalNumberOfDatasetsFound) {
                     start = start + pageSize; // advance to the next page
                     $('#' + geomapViewerId + '-startRetrievingMore').show();
                 } else {
@@ -521,7 +521,7 @@ function DvDatasetGeoMapViewer(options) {
             controls.append(startRetrievingMore);
         }
 
-        // More explanantion via tooltip     
+        // More explanation via tooltip     
         let tooltip = $(`<span>&nbsp;</span><span class="glyphicon glyphicon-question-sign tooltip-icon" data-toggle="tooltip" data-placement="auto top" data-trigger="hover" 
             data-original-title="Geographical map showing locations of Datasets when coordinates have been specified in the metadata. 
             Multiple locations per dataset are possible. Initially only up to the first ${maxSearchRequestsPerPage} datasets in the search results are used. 
@@ -661,7 +661,7 @@ function DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPo
                 $('#datasetForm').on('click', function(event) {
                     let matchTitle = event.target.textContent.match(new RegExp(`\\s*${metadataBlockTitle}\\s*`));
                     if (matchTitle !== null) {
-                        //console.log(`Clicked ${metadatBlockTitle}`);
+                        //console.log(`Clicked ${metadataBlockTitle}`);
                         mapPreviewLocation = createMapPreviewPoints('#' + metadataBlockPointId, points);
                         // if (mapPreviewLocation !== undefined && mapPreviewLocation !== null) {
                         // could do some stuff here
@@ -838,16 +838,16 @@ function DvDatasetMDBlockSectionGeoMapViewer(metadataBlockTitle, metadataBlockPo
  */
 function DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBoxName, 
                                         pointExtractorFromText, polygonExtractorFromText) {
-    const summaryMetdata = $("#contentTabs");
-    if (summaryMetdata.length > 0) {
+    const summaryMetadata = $("#contentTabs");
+    if (summaryMetadata.length > 0) {
         // Dataset summary metadata section found
 
         let points = [];
         let polygons = [];
 
         // find points and or boxes
-        const summaryPoints = summaryMetdata.find('#' + `metadata_${metadataBlockPointName}`);
-        const summaryBoxes = summaryMetdata.find('#' + `metadata_${metadataBlockBoxName}`);
+        const summaryPoints = summaryMetadata.find('#' + `metadata_${metadataBlockPointName}`);
+        const summaryBoxes = summaryMetadata.find('#' + `metadata_${metadataBlockBoxName}`);
         if (summaryPoints.length > 0) {
             // Summary points found
             let dansSpatialPointText = summaryPoints.find("td").text();
@@ -874,7 +874,7 @@ function DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBox
             // insert map just after the summary
             const preview_id_prefix = 'summary_'; // prefix for the map preview id
             const mapPreview = $('<div id="' + preview_id_prefix + 'mapPreview"></div>');
-            //summaryMetdata.append(mapPreview); // inside the summary metadata, at the end
+            //summaryMetadata.append(mapPreview); // inside the summary metadata, at the end
             mapPreview.insertBefore('#contentTabs'); // insert before the content tabs, so it is visible
 
             // Use different color for the marker balloon (icon) 
@@ -1007,7 +1007,7 @@ let standardDvGeoMap = (function() {
                             },
                             "properties": {
                                 "name": value.name,
-                                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
+                                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persistent so wanted in a json file
                                 "authors": authors,
                                 "publication_date": publicationDate,
                                 "id": value.global_id
@@ -1102,9 +1102,9 @@ let standardDvGeoMap = (function() {
  * from a search result from the Dataverse search API
  * and from metadata text in the metadata block
  * 
- * Note that thsis is specific for the archaeology data station
+ * Note that this is specific for the archaeology data station
  * with the dansTemporalSpatial metadata block
- * and the DCCD subverse on the DatverseNL installation with the dccd-location metadata block. 
+ * and the DCCD subverse on the DataverseNL installation with the dccd-location metadata block. 
  * 
  * Some DANS stations might use the geospatial metadata block,
  * in that case the standardDvGeoMap module can be used
@@ -1174,7 +1174,7 @@ let dansDvGeoMap = (function() {
                             },
                             "properties": {
                                 "name": value.name,
-                                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
+                                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persistent so wanted in a json file
                                 "authors": authors,
                                 "publication_date": publicationDate,
                                 "id": value.global_id
@@ -1227,7 +1227,7 @@ let dansDvGeoMap = (function() {
                             },
                             "properties": {
                                 "name": value.name,
-                                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
+                                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persistent so wanted in a json file
                                 "authors": authors,
                                 "publication_date": publicationDate,
                                 "id": value.global_id
@@ -1385,7 +1385,7 @@ let dansDvGeoMap = (function() {
                             },
                             "properties": {
                                 "name": value.name,
-                                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
+                                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persistent so wanted in a json file
                                 "authors": authors,
                                 "publication_date": publicationDate,
                                 "id": value.global_id
