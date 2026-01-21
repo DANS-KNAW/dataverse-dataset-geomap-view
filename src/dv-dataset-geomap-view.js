@@ -68,10 +68,20 @@ function DvDatasetGeoMapViewer(options) {
     // Known issues: when switching to satellite view, after reload it's is back to the default view
     // should store the selection in session storage
 
+    // check if Leaflet and Leaflet.markercluster are loaded
+    if (typeof L === 'undefined') {
+        console.error('DvDatasetGeoMapViewer: Leaflet library is not loaded. Map viewer cannot be created.');
+        return;
+    }
+    if (typeof L.markerClusterGroup === 'undefined') {
+        console.error('DvDatasetGeoMapViewer: Leaflet.markercluster library is not loaded. Map viewer cannot be created.');
+        return;
+    }
+
     // We use clustering for potential large number of points
     // It also handles the case where more points are on the same location
     // See: https://github.com/Leaflet/Leaflet.markercluster
-    let useClustering = true;
+    let useClustering = true; // hardcoded for now, could be made configurable later
 
     // some id's for element creation and selection
     const geomapViewerId = 'geomapview'; // id for the map view div, also used for prefixing
@@ -583,6 +593,12 @@ function DvDatasetMDGeoMapViewer(options) {
     let polygonExtractorFromText;
     if (options.polygonExtractorFromText) {
         polygonExtractorFromText = options.polygonExtractorFromText;
+    }
+
+    // check if Leaflet is loaded
+    if (typeof L === 'undefined') {
+        console.error('DvDatasetMDGeoMapViewer: Leaflet library is not loaded. Map viewer cannot be created.');
+        return;
     }
 
     DvDatasetMDSummaryGeoMapViewer(metadataBlockPointName, metadataBlockBoxName, 
