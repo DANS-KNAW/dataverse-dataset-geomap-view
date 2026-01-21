@@ -86,7 +86,7 @@
     font-size: 12px; /* needed to fix smaller font size  */
 }
 .leaflet-control-layers-base {
-    min-width: 14em; /* needed to fix resizing when 'Satelite' layer is selected  */
+    min-width: 14em; /* needed to fix resizing when 'Satellite' layer is selected  */
 }
 </style>
 <!-- DvDatasetGeoMapViewer, when deployed on a DANS server the js file should be in '/var/www/html/custom' -->
@@ -95,11 +95,18 @@
 <script>
 // Assume we have jQuery, because its is in the footer of the Dataverse application
 $().ready(function() {
-    DvDatasetGeoMapViewer({
-        maxSearchRequestsPerPage:100,
-        allowOtherBaseMaps: true,
-        allowRetrievingMore: true,
-    });
-    DvDatasetMDGeoMapViewer();
+    // Standard Dataverse: geospatial
+    DvDatasetGeoMapViewer(standardDvGeoMap.dvViewerOptions.geospatial);
+    DvDatasetMDGeoMapViewer(standardDvGeoMap.dvMDViewerOptions.geospatial);
+
+    // for DANS use either archaeology or dccd options
+    //
+    // DCCD datasets
+    //DvDatasetGeoMapViewer(dansDvGeoMap.dansDvViewerOptions.dccd);
+    //DvDatasetMDGeoMapViewer(dansDvGeoMap.dansDvMDViewerOptions.dccd);
+    //
+    // Archaeology datasets
+    //DvDatasetGeoMapViewer(dansDvGeoMap.dansDvViewerOptions.archaeology);
+    //DvDatasetMDGeoMapViewer(dansDvGeoMap.dansDvMDViewerOptions.archaeology);
 });
 </script>

@@ -15,7 +15,7 @@
             "typeName": "title",
             "multiple": false,
             "typeClass": "primitive",
-            "value": "title"
+            "value": "{{ title }}"
           },
           {
             "typeName": "author",
@@ -75,7 +75,7 @@
                   "typeName": "dsDescriptionValue",
                   "multiple": false,
                   "typeClass": "primitive",
-                  "value": "test"
+                  "value": "a fake dataset with coordinates"
                 }
               }
             ]
@@ -85,10 +85,10 @@
             "multiple": true,
             "typeClass": "controlledVocabulary",
             "value": [
-              "Arts and Humanities"
+              "Other"
             ]
           },
-          {
+        {
             "typeName": "keyword",
             "multiple": true,
             "typeClass": "compound",
@@ -98,7 +98,7 @@
                   "typeName": "keywordValue",
                   "multiple": false,
                   "typeClass": "primitive",
-                  "value": "keyword"
+                  "value": "{{ keyword }}"
                 }
               }
               ]
@@ -113,97 +113,46 @@
             "typeName": "dateOfDeposit",
             "multiple": false,
             "typeClass": "primitive",
-            "value": "2024-11-12"
+            "value": "2025-10-31"
           }
         ]
       },
-      "dansRights": {
-        "displayName": "Rights Metadata",
-        "name": "dansRights",
+      "geospatial": {
+        "displayName": "Geospatial Metadata",
+        "name": "geospatial",
         "fields": [
           {
-            "typeName": "dansRightsHolder",
-            "multiple": true,
-            "typeClass": "primitive",
-            "value": [
-              "dans"
-            ]
-          },
-          {
-            "typeName": "dansPersonalDataPresent",
-            "multiple": false,
-            "typeClass": "controlledVocabulary",
-            "value": "No"
-          },
-          {
-            "typeName": "dansMetadataLanguage",
-            "multiple": true,
-            "typeClass": "controlledVocabulary",
-            "value": [
-              "English"
-            ]
-          }
-        ]
-      },
-      "dansRelationMetadata": {
-        "displayName": "Relation Metadata",
-        "name": "dansRelationMetadata",
-        "fields": [
-          {
-            "typeName": "dansAudience",
-            "multiple": true,
-            "typeClass": "primitive",
-            "value": [
-              "https://www.narcis.nl/classification/D37000"
-            ],
-            "expandedvalue": [
-              {
-                "@id": "https://www.narcis.nl/classification/D37000",
-                "termName": [
-                  {
-                    "lang": "nl",
-                    "value": "Archeologie"
-                  },
-                  {
-                    "lang": "en",
-                    "value": "Archaeology"
-                  }
-                ],
-                "vocabularyUri": "https://www.narcis.nl/classification/"
-              }
-            ]
-          }
-        ]
-      },
-      "dansTemporalSpatial": {
-        "displayName": "Temporal and Spatial Coverage",
-        "name": "dansTemporalSpatial",
-        "fields": [
-          {
-            "typeName": "dansSpatialPoint",
+            "typeName": "geographicBoundingBox",
             "multiple": true,
             "typeClass": "compound",
             "value": [
+             {% for box in boxes %}
               {
-                "dansSpatialPointX": {
-                  "typeName": "dansSpatialPointX",
+                "westLongitude": {
+                  "typeName": "westLongitude",
                   "multiple": false,
                   "typeClass": "primitive",
-                  "value": "12345"
+                  "value": "{{ box[3]|float}}"
                 },
-                "dansSpatialPointY": {
-                  "typeName": "dansSpatialPointY",
+                "eastLongitude": {
+                  "typeName": "eastLongitude",
                   "multiple": false,
                   "typeClass": "primitive",
-                  "value": "6789"
+                  "value": "{{ box[1]|float}}"
                 },
-                "dansSpatialPointScheme": {
-                  "typeName": "dansSpatialPointScheme",
+                "northLatitude": {
+                  "typeName": "northLatitude",
                   "multiple": false,
-                  "typeClass": "controlledVocabulary",
-                  "value": "RD (in m.)"
+                  "typeClass": "primitive",
+                  "value": "{{ box[0]|float}}"
+                },
+                "southLatitude": {
+                  "typeName": "southLatitude",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "{{ box[2]|float}}"
                 }
-              }
+              }{% if not loop.last %},{% endif %}{% endfor %}
             ]
           }
         ]

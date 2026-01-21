@@ -1,0 +1,193 @@
+{
+  "datasetVersion": {
+    "license": {
+      "name": "CC0 1.0",
+      "uri": "http://creativecommons.org/publicdomain/zero/1.0",
+      "iconUri": "https://licensebuttons.net/p/zero/1.0/88x31.png"
+    },
+    "fileAccessRequest": true,
+    "metadataBlocks": {
+      "citation": {
+        "displayName": "Citation Metadata",
+        "name": "citation",
+        "fields": [
+          {
+            "typeName": "title",
+            "multiple": false,
+            "typeClass": "primitive",
+            "value": "{{ title }}"
+          },
+          {
+            "typeName": "author",
+            "multiple": true,
+            "typeClass": "compound",
+            "value": [
+              {
+                "authorName": {
+                  "typeName": "authorName",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "Admin, Dataverse"
+                },
+                "authorAffiliation": {
+                  "typeName": "authorAffiliation",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "Dataverse.org"
+                }
+              }
+            ]
+          },
+          {
+            "typeName": "datasetContact",
+            "multiple": true,
+            "typeClass": "compound",
+            "value": [
+                { 
+                "datasetContactEmail" : {
+                    "typeClass": "primitive",
+                    "multiple": false,
+                    "typeName": "datasetContactEmail",
+                    "value" : "finchtest@mailinator.com"
+                },
+                "datasetContactName": {
+                  "typeName": "datasetContactName",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "Admin, Dataverse"
+                },
+                "datasetContactAffiliation": {
+                  "typeName": "datasetContactAffiliation",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "Dataverse.org"
+                }
+              }
+            ]
+          },
+          {
+            "typeName": "dsDescription",
+            "multiple": true,
+            "typeClass": "compound",
+            "value": [
+              {
+                "dsDescriptionValue": {
+                  "typeName": "dsDescriptionValue",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "a fake dataset with coordinates"
+                }
+              }
+            ]
+          },
+          {
+            "typeName": "subject",
+            "multiple": true,
+            "typeClass": "controlledVocabulary",
+            "value": [
+              "Other"
+            ]
+          },
+        {
+            "typeName": "keyword",
+            "multiple": true,
+            "typeClass": "compound",
+            "value": [
+              {
+                "keywordValue": {
+                  "typeName": "keywordValue",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "{{ keyword }}"
+                }
+              }
+              ]
+          },
+          {
+            "typeName": "depositor",
+            "multiple": false,
+            "typeClass": "primitive",
+            "value": "Admin, Dataverse"
+          },
+          {
+            "typeName": "dateOfDeposit",
+            "multiple": false,
+            "typeClass": "primitive",
+            "value": "2025-10-31"
+          }
+        ]
+      },
+      "dccd": {
+        "displayName": "DCCD Metadata",
+        "name": "dccd",
+        "fields": [
+          {
+            "typeName": "dccd-projectType",
+            "multiple": true,
+            "typeClass": "controlledVocabulary",
+            "value": [
+              "dating"
+            ]
+          },
+          {
+            "typeName": "dccd-category",
+            "multiple": false,
+            "typeClass": "controlledVocabulary",
+            "value": "archaeology"
+          },
+          {
+            "typeName": "dccd-taxon",
+            "multiple": true,
+            "typeClass": "controlledVocabulary",
+            "value": [
+              "Quercus nigra L."
+            ]
+          },
+          {
+            "typeName": "dccd-location",
+            "multiple": true,
+            "typeClass": "compound",
+            "value": [
+              {
+                "dccd-latitude": {
+                  "typeName": "dccd-latitude",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "{{ point[0]|float}}"
+                },
+                "dccd-longitude": {
+                  "typeName": "dccd-longitude",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "{{ point[1]|float}}"
+                }
+              }
+            ]
+          },
+          {
+            "typeName": "dccd-period",
+            "multiple": true,
+            "typeClass": "compound",
+            "value": [
+              {
+                "dccd-periodStart": {
+                  "typeName": "dccd-periodStart",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "-50"
+                },
+                "dccd-periodEnd": {
+                  "typeName": "dccd-periodEnd",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "value": "150"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "files": []
+  }
+}

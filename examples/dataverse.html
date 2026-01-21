@@ -86,12 +86,28 @@
 <script>
 // Assume we have jQuery, because its is in the footer of the Dataverse application
 $().ready(function() {
-    DvDatasetGeoMapViewer({
-        maxSearchRequestsPerPage:100,
-        allowOtherBaseMaps: true,
-        allowRetrievingMore: true,
-        alternativeBaseUrl: 'https://archaeology.datastations.nl',
-    });
+
+    // test geospatial feature extractor
+    let dvViewerOptions = {
+        ...standardDvGeoMap.dvViewerOptions.geospatial,
+        alternativeBaseUrl: 'https://dev.dataverse.nl'
+    };
+    // Note that Harvard server is not CORS enabled for this, so this will only work on a dev server with CORS enabled
+    // OR could use some sort of proxy
+
+    // Alternatively 
+    // Testing Archaeology
+    //
+    // let dvViewerOptions = {
+    //     ...standardDvGeoMap.dvViewerOptions.archaeology,
+    //     alternativeBaseUrl: 'https://archaeology.datastations.nl',
+    // };
+
+    DvDatasetGeoMapViewer(dvViewerOptions);
+
+    // Note that we do not call DvDatasetMDGeoMapViewer here, as there is no metadata to show on this test page
+    // But we could call it if we had a proper metadata block displayed on this test page, 
+    // would need to fake that as well though
 });
 </script>
 </html>
