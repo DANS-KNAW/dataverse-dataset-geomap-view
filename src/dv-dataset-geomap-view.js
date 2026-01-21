@@ -206,9 +206,10 @@ function DvDatasetGeoMapViewer(options) {
         maxZoom: 19,
         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     });
-    // Initialize map, with OpenStreetMap centered on the Netherlands but showing most of Europe
+    // Initialize map, with OpenStreetMap 
     // should make this configurable, but for now it is hardcoded
-    var map = L.map(mapInsertionId).setView([51.505, -0.09], 3);
+    //var map = L.map(mapInsertionId).setView([51.505, -0.09], 3); // centered on the Netherlands but showing most of Europe
+    var map = L.map(mapInsertionId).setView([20.0, 5.0], 2); // global view
     openStreetMap.addTo(map);
 
     let boundaryPlacesShown = true;
@@ -252,7 +253,7 @@ function DvDatasetGeoMapViewer(options) {
     let markers;
     if (useClustering) {
         markers = L.markerClusterGroup();
-        // Note we don't use chunckedloading, but retrieve in batches (pages) would be nice
+        // Note we don't use chunkedloading, but retrieve in batches (pages) would be nice
         // markers =L.markerClusterGroup({ chunkedLoading: true, chunkProgress: updateProgressBar });
     } else {
         markers = L.featureGroup();
