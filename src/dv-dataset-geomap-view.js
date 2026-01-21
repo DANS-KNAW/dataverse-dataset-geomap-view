@@ -108,7 +108,8 @@ function DvDatasetGeoMapViewer(options) {
 
     // session storage is gone when browser tab or window is closed
     // we only want the selection to survive page reloads because of changes in searching
-    let activeTab = sessionStorage.getItem('activeTab');
+    const activeTabKey = 'geomapviewActiveTab';
+    let activeTab = sessionStorage.getItem(activeTabKey);
     let selectedTab = 'list'; // default is the list tab
 
     if (activeTab) { // we might restrict to values 'list' or 'map' only
@@ -120,7 +121,7 @@ function DvDatasetGeoMapViewer(options) {
     $('#searchResultsViewTab a').on('click', function (event) {
         event.preventDefault();
         selectedTab = $(this).attr('aria-controls');
-        sessionStorage.setItem('activeTab', selectedTab);
+        sessionStorage.setItem(activeTabKey, selectedTab);
         updateTabsView();
     });
 
@@ -535,9 +536,9 @@ function DvDatasetGeoMapViewer(options) {
         // add legend at the bottom, assume we always can have points and or bounding boxes
         let legend = $('<div style="padding: 5px 0 0 5px;margin: 5px;">' + 
             'Location Markers: ' +
-            '<img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" style="height: 2.4rem;" alt="Example blue ballon marker; indicates a Point"/>' +
+            '<img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" style="height: 2.4rem;" alt="Example blue balloon marker; indicates a Point"/>' +
             ' Point' + 
-            '; ' + '<img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" style="height: 2.4rem;" alt="Example red ballon marker; indicates an Area"/>' +
+            '; ' + '<img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" style="height: 2.4rem;" alt="Example red balloon marker; indicates an Area"/>' +
             ' Area ' + 
             ' - The marker is at the center of the bounding box' +
             '</div>');
