@@ -154,7 +154,7 @@ function DvDatasetGeoMapViewer(options) {
             return true;
         }
         // otherwise the url must end in dataverse/{verse}
-        const path = window.location.pathname;
+        const path = window.location.pathname.replace(/\/$/, '');  // remove a trailing slash
         for (let verse of verses_to_restrict_to) {
             if (path.endsWith('/dataverse/' + verse)) {
                 // we are on a dataverse search page where we want to show the map viewer
