@@ -1553,7 +1553,11 @@ let dansDvGeoMap = (function() {
             allowOtherBaseMaps: true,
             allowRetrievingMore: true,
             // DCCD on DVNL specific settings
-            verses_to_restrict_to: ['dccd', 'stichtingring'],
+            verses_to_restrict_to: ['dccd',
+                'dendrolabwur','biax','DendroResearch','vandaalendendro','usheffield',
+                'uliege','unrlfvienna','dccdintprojnwo','kikirpa','arkeolan',
+                'baac','fha','valdovurumailt','dendronet','RCE_dendrochronologie',
+                'dendrodk','stichtingring','archleidenuniv'],
             subtree: 'dccd',
             metadataBlockName: 'dccd',
             locationCoordinatesFilterquery: encodeURI("dccd-latitude:[* TO *]"),
