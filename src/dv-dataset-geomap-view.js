@@ -37,7 +37,12 @@ function DvDatasetGeoMapViewer(options) {
 
     // Geospatial specific settings as default values
     let subtree = options.subtree || 'root'; // Note that Dataverse can be configured to have another 'root' verse alias
-    
+    //  get current collection from the URL
+    let currentCollection = getCurrentCollection();
+    if (currentCollection) {
+        subtree = currentCollection; // restrict search to the current collection
+    }
+
     // these next three should be specified, so not really optional and thus must have a default
     let metadataBlockName = options.metadataBlockName || 'geospatial'; // specific metadata block for geospatial containing location coordinates
     let featureExtractor = options.featureExtractor || standardDvGeoMap.extractGeospatialFeatures; // specific feature extractor for geospatial
@@ -141,6 +146,18 @@ function DvDatasetGeoMapViewer(options) {
     }, function(){
         $(this).removeClass("ui-state-hover");
     });
+
+    //  get current collection (dataverse being viewed)from the URL
+    function getCurrentCollection() {
+        const path = window.location.pathname;
+        const pathParts = path.split('/');
+        const dataverseIndex = pathParts.indexOf('dataverse');
+        if (dataverseIndex !== -1 && dataverseIndex < pathParts.length - 1) {
+            return pathParts[dataverseIndex + 1].replace(/\/$/, '');  // remove a trailing slash
+            
+        }
+        return null; // No collection found in the URL
+    }
 
     // detect if we are on a dataverse search page that is allowed to show the map viewer
     //
